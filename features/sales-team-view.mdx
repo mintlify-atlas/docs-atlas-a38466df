@@ -1,0 +1,337 @@
+---
+title: 'Sales Team View'
+description: 'Individual seller performance dashboard with personal KPIs and portfolio insights'
+icon: 'user-tie'
+---
+
+## Overview
+
+The **Sales Team View** (Vista Vendedores) provides each salesperson with their own personalized performance dashboard. Unlike the management view that shows the entire team, this view focuses on individual metrics, personal rankings, and client portfolio details—empowering sellers to track their progress and identify opportunities.
+
+<Info>
+  **Who uses this view**: Field sales representatives, account managers, and individual contributors who need to monitor their own performance and manage their client portfolios.
+</Info>
+
+## Seller Profile Header
+
+At the top of the page, you'll see a personalized profile card showing:
+
+- **Photo placeholder** with color-coded border based on seller profile
+- **Full name** of the selected seller
+- **Territory/Zone** assignment (e.g., "North Zone")
+- **Tenure** with the company (years of experience)
+- **Profile classification**: Star / Stable / Development / Problematic
+
+<CardGroup cols={2}>
+  <Card title="⭐ Star Profile" icon="star" color="#00C49F">
+    Green border - Top performer, consistently exceeding targets
+  </Card>
+  
+  <Card title="📊 Stable Profile" icon="chart-line" color="#6C9EE5">
+    Blue border - Reliable performer, meeting expectations
+  </Card>
+  
+  <Card title="🌱 Development" icon="seedling" color="#FFB347">
+    Orange border - Growing potential, needs coaching
+  </Card>
+  
+  <Card title="⚠️ Problematic" icon="triangle-exclamation" color="#E84855">
+    Red border - Underperforming, requires intervention
+  </Card>
+</CardGroup>
+
+## Personal KPI Dashboard
+
+Four key metrics show individual performance:
+
+<CardGroup cols={2}>
+  <Card title="Period Sales" icon="dollar-sign">
+    Total revenue you generated:
+    - Your sales total for selected dates
+    - % change vs previous equivalent period
+    - Progress toward your assigned quota
+    - Visual health indicator
+  </Card>
+  
+  <Card title="Quota Attainment" icon="bullseye">
+    Your target achievement:
+    - Percentage of quota reached
+    - Color-coded status (green/orange/red)
+    - Target: 100% or higher
+  </Card>
+  
+  <Card title="Clients Visited" icon="handshake">
+    Number of unique clients served:
+    - Distinct customers you sold to
+    - Coverage of your assigned portfolio
+    - Activity indicator
+  </Card>
+  
+  <Card title="Average Ticket" icon="receipt">
+    Revenue per client:
+    - Average sale value per customer
+    - Indicates deal quality
+    - Upselling effectiveness metric
+  </Card>
+</CardGroup>
+
+## Performance Gauge
+
+The **Personal Performance Gauge** displays your quota attainment as a speedometer-style chart:
+
+- **0-80%**: Red zone (below expectations)
+- **80-100%**: Orange zone (approaching target)
+- **100%+**: Green zone (exceeding target)
+
+The needle shows your current position, making it instantly clear where you stand.
+
+<Tip>
+  Check this gauge first thing Monday morning to know if you need to accelerate activity this week.
+</Tip>
+
+## Personal Sales Evolution
+
+The **6-Month Sales Trend** chart shows your performance history:
+
+- Line graph of your monthly sales
+- Your monthly targets overlay
+- Interactive hover for exact values
+- Trend identification (growing/stable/declining)
+
+**Use this chart to**:
+- Spot your strongest vs weakest months
+- Identify seasonal patterns in your territory
+- Set realistic goals based on history
+- Demonstrate growth to management
+
+## Team Ranking Position
+
+### Your Position Card
+
+A prominent card displays:
+
+- **Current rank** among all sellers (e.g., "#5 of 12")
+- **Rank movement** from previous period:
+  - ↑ **Green arrow**: You moved up
+  - → **Gray dash**: Position unchanged
+  - ↓ **Red arrow**: You dropped in ranking
+- **Total sellers** in the team
+
+<Note>
+  Rankings are based on total revenue for the selected period. This creates healthy competition while keeping everyone accountable.
+</Note>
+
+### Full Team Leaderboard
+
+Below your position, you'll see the complete seller ranking table showing:
+
+- All team members ordered by sales performance
+- Your row is highlighted for easy identification
+- Each seller's:
+  - Sales total
+  - Quota attainment %
+  - Traffic light indicator (🟢/🟡/🔴)
+
+**Gamification element**: This transparency motivates sellers to improve their standing and celebrates top performers.
+
+## Your Client Portfolio
+
+### My Clients Table
+
+The **My Clients** section shows all customers assigned to you:
+
+| Client Name | Total Sales | Purchases | Pareto | Last Purchase | Status |
+|-------------|-------------|-----------|--------|---------------|--------|
+| ABC Corp | $125,000 | 24 | A | 2 days ago | 🟢 Active |
+| XYZ Store | $45,000 | 12 | B | 15 days ago | 🟢 Active |
+| DEF Retail | $32,000 | 8 | B | 35 days ago | 🟡 At Risk |
+| GHI Market | $18,000 | 5 | C | 60 days ago | 🔴 At Risk |
+
+**Table features**:
+- Sortable by any column
+- Pareto classification (A = top 20%, B = next 30%, C = remaining 50%)
+- Days since last purchase
+- Risk indicators
+- Click to see client detail
+
+### Key Insights
+
+<CardGroup cols={2}>
+  <Card title="Category A Clients" icon="crown">
+    Your most valuable customers—focus 60% of your time here
+  </Card>
+  
+  <Card title="Category B Clients" icon="arrow-trend-up">
+    Medium-value with growth potential—could become A clients
+  </Card>
+  
+  <Card title="Category C Clients" icon="handshake">
+    Smaller accounts—maintain contact but don't over-invest time
+  </Card>
+  
+  <Card title="At-Risk Clients" icon="triangle-exclamation">
+    30+ days without purchases—prioritize reactivation calls
+  </Card>
+</CardGroup>
+
+## Your Top Products
+
+The **My Top Products** table shows what you're selling most:
+
+| Product | Category | Units Sold | Revenue | % of Total |
+|---------|----------|------------|---------|------------|
+| Product A | Beverages | 1,200 | $36,000 | 28.8% |
+| Product B | Snacks | 850 | $25,500 | 20.4% |
+| Product C | Dairy | 620 | $18,600 | 14.9% |
+
+**Use this to**:
+- Understand your product mix
+- Identify upselling opportunities
+- Diversify if too concentrated
+- Request training on underperforming categories
+
+<Note>
+  If 80%+ of your sales come from just 1-2 products, you may have portfolio concentration risk. Discuss category expansion with your manager.
+</Note>
+
+## Clients at Risk
+
+The **Clients at Risk** section highlights accounts needing immediate attention:
+
+### Risk Criteria
+
+<Warning>
+  A client is flagged "at risk" if:
+  - Classified as Pareto A or B (valuable accounts)
+  - AND no purchases in the last 30+ days
+</Warning>
+
+Each at-risk client card shows:
+- Client name and Pareto category
+- Days since last purchase
+- Previous purchase frequency
+- Suggested action: "Contact for reactivation"
+
+### Reactivation Workflow
+
+**For clients at risk**:
+
+1. **Day 30-45**: ⚠️ Warning
+   - Phone call to check in
+   - Offer promotional deal
+   - Understand any issues
+
+2. **Day 45-60**: 🔴 Critical
+   - In-person visit
+   - Escalate to manager if needed
+   - Special pricing consideration
+
+3. **Day 60+**: 🚨 Urgent
+   - Immediate manager involvement
+   - Customer retention package
+   - Identify root cause of inactivity
+
+<Tip>
+  Check the "Clients at Risk" section every Monday morning and create your weekly visit plan prioritizing these accounts.
+</Tip>
+
+## Daily Workflow for Sellers
+
+### Morning Routine (5 minutes)
+
+1. **Check Your Gauge**: Where do you stand on quota?
+2. **Review Rank**: Did you move up or down?
+3. **Scan At-Risk Clients**: Who needs a call today?
+4. **Check Top Products**: What should you push this week?
+
+### Weekly Planning (15 minutes)
+
+1. **Analyze 6-month trend**: Are you on an upward trajectory?
+2. **Prioritize visits**:
+   - At-risk A clients (highest priority)
+   - Growing B clients (upsell opportunity)
+   - New client prospecting
+3. **Product focus**: Pick 2-3 products to emphasize
+4. **Set weekly goal**: What do you need to stay in green zone?
+
+### Month-End Review (30 minutes)
+
+1. **Final quota check**: Did you hit target?
+2. **Rank analysis**: Where did you finish vs last month?
+3. **Client performance**: Who were your best accounts?
+4. **Product mix**: Any categories to improve next month?
+5. **Plan next month**: Set personal goals and strategies
+
+## Filter and Compare
+
+Use the sidebar to adjust your view:
+
+- **Date Range**: Compare different periods
+- **Zone Filter**: If you cover multiple territories
+- **Channel Filter**: Analyze by sales channel (if applicable)
+
+<Info>
+  Pro tip: Compare your current month to the same month last year to account for seasonal patterns in your territory.
+</Info>
+
+## Seller Profile Types
+
+Your profile classification is determined by:
+
+| Profile | Criteria | Focus |
+|---------|----------|-------|
+| **⭐ Star** | 100%+ quota, top 3 rank, consistent performance | Mentor others, handle key accounts |
+| **📊 Stable** | 80-100% quota, steady results | Maintain performance, incremental growth |
+| **🌱 Development** | 60-80% quota, improving trend | Coaching, skill development, support |
+| **⚠️ Problematic** | &lt;60% quota, declining trend | Performance improvement plan, intervention |
+
+<Note>
+  Your profile is not permanent—it can improve with consistent effort and results. Many "Star" sellers started as "Development" profiles.
+</Note>
+
+## Calculations Explained
+
+### Your Sales Total
+```
+Sum of all importe_neto 
+where id_vendedor = your_id
+and fecha between selected_dates
+```
+
+### Quota Attainment
+```
+(Your Actual Sales / Your Assigned Target) × 100
+```
+
+### Your Rank
+```
+Your position when all sellers sorted DESC by sales
+```
+
+### Client Risk Flag
+```
+if (client.pareto in ['A','B']) 
+   and (days_since_last_purchase > 30):
+   flag_at_risk = True
+```
+
+### Average Ticket
+```
+Your Total Sales / Your Unique Clients
+```
+
+## Related Views
+
+<CardGroup cols={3}>
+  <Card title="Client Analysis" icon="magnifying-glass-chart" href="/features/client-analysis">
+    Deep dive into your portfolio
+  </Card>
+  
+  <Card title="Product Analysis" icon="box" href="/features/product-analysis">
+    Product performance insights
+  </Card>
+  
+  <Card title="Management View" icon="users-gear" href="/features/management-view">
+    See full team context
+  </Card>
+</CardGroup>

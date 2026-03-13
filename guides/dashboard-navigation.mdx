@@ -1,0 +1,446 @@
+---
+title: Dashboard Navigation
+description: Navigate through the multi-page Visor KPI dashboard efficiently
+icon: 'compass'
+---
+
+## Dashboard Structure
+
+Visor KPI Comercial is organized into **six main views**, each designed for specific analytical needs:
+
+```
+📊 Visor KPI Comercial
+├── 🏠 Resumen Ejecutivo (Home)
+├── 📈 1. Gerencia
+├── 👤 2. Vendedores
+├── 🏢 3. Clientes
+├── 📦 4. Productos
+└── 🚨 5. Alertas
+```
+
+## Main Pages
+
+<CardGroup cols={2}>
+  <Card title="Resumen Ejecutivo" icon="home" href="#resumen-ejecutivo">
+    High-level overview with key metrics, team performance, and active alerts
+  </Card>
+
+  <Card title="Gerencia" icon="chart-line" href="#gerencia">
+    Management view with team analytics and performance trends
+  </Card>
+
+  <Card title="Vendedores" icon="user-tie" href="#vendedores">
+    Individual salesperson performance and rankings
+  </Card>
+
+  <Card title="Clientes" icon="building" href="#clientes">
+    Customer portfolio analysis with Pareto classification
+  </Card>
+
+  <Card title="Productos" icon="box" href="#productos">
+    Product performance and category analytics
+  </Card>
+
+  <Card title="Alertas" icon="bell" href="#alertas">
+    Alert center with actionable insights and opportunities
+  </Card>
+</CardGroup>
+
+---
+
+## Resumen Ejecutivo
+
+**Purpose**: Quick snapshot of overall business performance
+
+**Key Components**:
+
+<AccordionGroup>
+  <Accordion title="KPI Cards (Row 1)" icon="credit-card">
+    Four primary metrics displayed at the top:
+    - **Ventas del Período** 💰 - Total sales with vs. previous period comparison
+    - **Cumplimiento Equipo** 🎯 - Team target achievement percentage
+    - **Margen Bruto** 📈 - Gross margin with trend indicator
+    - **Cobertura de Clientes** 👥 - Customer coverage percentage
+
+    Each card shows:
+    - Current value (large, prominent)
+    - Delta vs. previous period (green/red arrow)
+    - Target/objective when applicable
+  </Accordion>
+
+  <Accordion title="Gauge + Evolution Chart (Row 2)" icon="chart-line">
+    **Left**: Gauge showing team target achievement (0-100%)
+    - 🟢 Green: ≥100% (on target)
+    - 🟡 Orange: 80-99% (warning)
+    - 🔴 Red: &lt;80% (critical)
+
+    **Right**: Monthly sales evolution chart
+    - Blue bars: Actual sales per month
+    - Red line: Monthly targets
+    - Shows last 13 months by default
+  </Accordion>
+
+  <Accordion title="Automatic Insight" icon="lightbulb">
+    AI-generated narrative summary including:
+    - Total sales and vs. previous period
+    - Team achievement status
+    - Traffic light distribution (🟢🟡🔴)
+    - Active alert count by severity
+  </Accordion>
+
+  <Accordion title="Top Rankings (Row 3)" icon="trophy">
+    Three side-by-side Top 5 lists:
+    - **🏆 Top Vendedores** - Best performing salespeople
+    - **🏪 Top Clientes** - Highest revenue customers
+    - **📦 Top Productos** - Best selling products
+
+    Each shows ranking position, name, revenue, and trend.
+  </Accordion>
+
+  <Accordion title="Alerts + Portfolio Status (Row 4)" icon="bell">
+    **Left Panel**: First 4 active alerts with severity indicators
+    - 🔴 Critical
+    - 🟡 Medium
+    - 🔵 Low
+    - 🟢 Opportunities
+
+    **Right Panel**: Portfolio health metrics
+    - Channel distribution (donut chart)
+    - Active customers count
+    - Customers at risk
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Gerencia
+
+**Purpose**: Management-level team analytics and performance monitoring
+
+**Location**: `pages/1_gerencia.py`
+
+**Features**:
+- Aggregated team performance metrics
+- Zone and channel distribution analysis
+- Period-over-period comparisons
+- Team composition insights
+
+<Tip>
+Use the Gerencia view for weekly management meetings and monthly performance reviews.
+</Tip>
+
+---
+
+## Vendedores
+
+**Purpose**: Individual salesperson performance tracking
+
+**Location**: `pages/2_vendedores.py`
+
+**Features**:
+
+<Steps>
+  <Step title="Ranking Table">
+    Sortable table showing all salespeople with:
+    - Current rank and rank change (🔺🔻)
+    - Sales amount and target achievement %
+    - Traffic light indicator (🟢🟡🔴)
+    - Unique customers served
+    - Average ticket size
+  </Step>
+
+  <Step title="Individual Drill-Down">
+    Click any salesperson to see:
+    - Monthly sales evolution vs. target
+    - Customer portfolio (top customers)
+    - Product mix
+    - Activity timeline
+  </Step>
+
+  <Step title="Comparison Tools">
+    Compare multiple salespeople side-by-side:
+    - Performance trends
+    - Territory coverage
+    - Customer acquisition
+  </Step>
+</Steps>
+
+**Key Metrics**:
+- `importe_total` - Total sales for period
+- `cumplimiento_pct` - Target achievement (from `kpi_engine.py:171-173`)
+- `ticket_promedio` - Average transaction per customer
+- `ranking_actual` - Current rank position
+- `delta_ranking` - Position change vs. previous period
+
+---
+
+## Clientes
+
+**Purpose**: Customer portfolio analysis and retention
+
+**Location**: `pages/3_clientes.py`
+
+**Features**:
+
+<CardGroup cols={2}>
+  <Card title="Pareto Analysis" icon="chart-pie">
+    Automatic ABC classification:
+    - **Category A**: Top 20% customers (80% of revenue)
+    - **Category B**: Next 30% customers (15% of revenue)
+    - **Category C**: Remaining 50% customers (5% of revenue)
+  </Card>
+
+  <Card title="Risk Flags" icon="triangle-exclamation">
+    Identifies at-risk customers:
+    - Category A/B with >30 days no purchase
+    - Declining purchase patterns
+    - Activity alerts
+  </Card>
+
+  <Card title="Customer Details" icon="address-card">
+    Drill-down shows:
+    - Purchase history and frequency
+    - Assigned salesperson
+    - Channel and zone
+    - Last purchase date
+  </Card>
+
+  <Card title="Retention Metrics" icon="chart-area">
+    Track customer health:
+    - New customers acquired
+    - Lost customers (previous buyers, now inactive)
+    - Recovered customers
+    - Coverage percentage
+  </Card>
+</CardGroup>
+
+**Technical Note**:
+Risk flag logic is defined in `kpi_engine.py:315-318`:
+```python
+flag_en_riesgo = (
+    (categoria_pareto in ["A", "B"]) &
+    (dias_desde_ultima_compra > 30)
+)
+```
+
+---
+
+## Productos
+
+**Purpose**: Product performance and category analysis
+
+**Location**: `pages/4_productos.py`
+
+**Features**:
+
+<Accordion title="Product Rankings">
+  Sortable table with:
+  - Revenue by product
+  - Units sold
+  - Transaction count
+  - Pareto category (A/B/C)
+  - Period-over-period change
+</Accordion>
+
+<Accordion title="Category Analysis">
+  - Sales distribution by category
+  - Category growth trends
+  - Mix evolution over time
+</Accordion>
+
+<Accordion title="Slow Movers">
+  Identifies products with:
+  - No sales in 60+ days (Alert ALT004)
+  - Declining trend
+  - Low rotation
+</Accordion>
+
+**Pareto Calculation**:
+Implemented in `src/pareto.py`, automatically applied in `kpi_engine.py:240`:
+- Sorts products by revenue descending
+- Calculates cumulative percentage
+- Assigns A/B/C categories based on 80/15/5 rule
+
+---
+
+## Alertas
+
+**Purpose**: Centralized alert management and action tracking
+
+**Location**: `pages/5_alertas.py`
+
+**Alert Types** (7 rules defined in `alerts_engine.py:14-71`):
+
+<CardGroup cols={2}>
+  <Card title="ALT001: Vendor Low Performance" icon="user-xmark" color="#E84855">
+    **Severity**: 🔴 Critical
+    
+    **Condition**: Salesperson with &lt;65% target achievement in last 30 days
+    
+    **Action**: Review portfolio and targets with supervisor
+  </Card>
+
+  <Card title="ALT002: Customer No Purchases" icon="building" color="#FFB347">
+    **Severity**: 🟡 Medium
+    
+    **Condition**: Active customer with no purchases in 45+ days
+    
+    **Action**: Urgent recovery contact
+  </Card>
+
+  <Card title="ALT003: Category A Drop" icon="chart-line-down" color="#E84855">
+    **Severity**: 🔴 Critical
+    
+    **Condition**: Category A customer with >25% revenue drop vs. last month
+    
+    **Action**: Key account visit
+  </Card>
+
+  <Card title="ALT004: Product No Movement" icon="box" color="#4A90E2">
+    **Severity**: 🔵 Low
+    
+    **Condition**: Active product with no sales in 60+ days
+    
+    **Action**: Review availability and commercial push
+  </Card>
+
+  <Card title="ALT005: Vendor Inactive" icon="user-clock" color="#FFB347">
+    **Severity**: 🟡 Medium
+    
+    **Condition**: No transactions in last 7 business days
+    
+    **Action**: Verify field activity
+  </Card>
+
+  <Card title="ALT006: Category B Growth" icon="arrow-trend-up" color="#00C49F">
+    **Severity**: 🟢 Opportunity
+    
+    **Condition**: Category B customer with >30% growth
+    
+    **Action**: Potential upgrade to A - increase visit frequency
+  </Card>
+
+  <Card title="ALT007: Team Near Target" icon="bullseye" color="#00C49F">
+    **Severity**: 🟢 Opportunity
+    
+    **Condition**: Team >85% achievement with 5+ business days remaining
+    
+    **Action**: Final push to close month in green
+  </Card>
+</CardGroup>
+
+**Alert Management**:
+- Filter by severity, entity type
+- Mark alerts as "Reviewed" (session-based)
+- Toggle to hide reviewed alerts
+- Alert counter by severity level
+
+<Tip>
+Alerts are recalculated in real-time based on your filter selections. Use the date range and zone filters to focus on specific areas.
+</Tip>
+
+---
+
+## Global Sidebar
+
+The sidebar is consistent across all pages and provides:
+
+<Steps>
+  <Step title="Logo & Title">
+    **📊 Visor KPI**
+    
+    Performance Comercial
+  </Step>
+
+  <Step title="Period Filter" icon="calendar">
+    Preset options:
+    - Hoy (Today)
+    - Esta semana (This week)
+    - Este mes (This month)
+    - Último mes (Last month)
+    - Este trimestre (This quarter)
+    - Último trimestre (Last quarter)
+    - Este año (This year)
+    - Último año (Last year)
+    - **Personalizado** (Custom range)
+    
+    <Note>
+    Custom range shows two date pickers for "Desde" and "Hasta" (From/To)
+    </Note>
+  </Step>
+
+  <Step title="Zone Filter" icon="map">
+    Multi-select for sales zones (populated from `Vendedores.zona`)
+    
+    Typical values: Norte, Sur, Centro, CABA, GBA
+  </Step>
+
+  <Step title="Salesperson Filter" icon="user">
+    Multi-select showing active salespeople:
+    - Format: "Nombre Completo (Zona)"
+    - Dynamically filtered by selected zones
+    - Only shows active (`activo = TRUE`) salespeople
+  </Step>
+
+  <Step title="Channel Filter" icon="store">
+    Multi-select for customer channels (from `Clientes.canal`)
+    
+    Typical values: Retail, Distribuidores, E-commerce, Mayorista
+  </Step>
+
+  <Step title="Clear Filters Button" icon="rotate">
+    🔄 **Limpiar filtros**
+    
+    Resets all filters to default state (current month, all zones/vendors/channels)
+  </Step>
+
+  <Step title="Last Update Indicator" icon="clock">
+    Shows current date as reference for data freshness
+  </Step>
+</Steps>
+
+## Navigation Tips
+
+<CardGroup cols={2}>
+  <Card title="Drill-Down Workflow" icon="magnifying-glass-chart">
+    Recommended flow:
+    1. Start at **Resumen Ejecutivo** for overview
+    2. Identify areas needing attention (alerts, low performers)
+    3. Navigate to specific page (**Vendedores**, **Clientes**, etc.)
+    4. Apply filters to isolate issue
+    5. Check **Alertas** for recommended actions
+  </Card>
+
+  <Card title="Filter Persistence" icon="floppy-disk">
+    Filters are stored in `st.session_state` and persist as you navigate between pages.
+    
+    <Tip>
+    Use this to compare metrics across different views with consistent filters.
+    </Tip>
+  </Card>
+
+  <Card title="Keyboard Shortcuts" icon="keyboard">
+    Streamlit default shortcuts:
+    - `R` - Rerun the app
+    - `Ctrl/Cmd + K` - Open command palette
+    - `C` - Clear cache
+  </Card>
+
+  <Card title="Mobile View" icon="mobile">
+    The dashboard is responsive but optimized for desktop/tablet.
+    
+    For mobile: Focus on summary cards and rankings. Detailed charts work best on larger screens.
+  </Card>
+</CardGroup>
+
+## Page Load Performance
+
+<Note>
+**First Load**: 2-5 seconds (builds cache)
+
+**Subsequent Loads**: &lt;1 second (uses cached data)
+
+**Cache Duration**: 1 hour
+</Note>
+
+All data loading functions use `@st.cache_data` with `ttl=3600` for optimal performance across pages.

@@ -1,0 +1,221 @@
+---
+title: 'Executive Summary Dashboard'
+description: 'High-level commercial intelligence dashboard for quick decision-making'
+icon: 'chart-line'
+---
+
+## Overview
+
+The **Executive Summary** is the main landing page of Visor KPI Comercial, providing leadership with a comprehensive view of business performance in seconds. This dashboard consolidates the most critical commercial KPIs, team performance rankings, and active alerts into a single, actionable view.
+
+<Info>
+  **Who uses this view**: C-level executives, commercial directors, and management who need to understand business health at a glance without drilling into detailed reports.
+</Info>
+
+## Key Metrics Displayed
+
+### Primary KPI Cards
+
+Four prominent metrics are displayed at the top of the dashboard:
+
+<CardGroup cols={2}>
+  <Card title="Sales Period Total" icon="dollar-sign">
+    Total revenue for the selected period with:
+    - Comparison vs previous period (% change)
+    - Progress toward monthly/quarterly target
+    - Visual indicator (green/orange/red)
+  </Card>
+  
+  <Card title="Team Performance" icon="bullseye">
+    Overall team quota attainment:
+    - Percentage of target achieved
+    - Target: 100%
+    - Color-coded status indicator
+  </Card>
+  
+  <Card title="Gross Margin" icon="chart-line">
+    Total gross margin for the period:
+    - Absolute margin value in currency
+    - % change vs previous period
+    - Profitability health indicator
+  </Card>
+  
+  <Card title="Client Coverage" icon="users">
+    Percentage of active clients with purchases:
+    - Current coverage percentage
+    - Visual health indicator
+    - Portfolio activation metric
+  </Card>
+</CardGroup>
+
+### Performance Gauge
+
+The **Team Performance Gauge** provides instant visual feedback on quota attainment:
+
+- **Green zone (100%+)**: Team exceeding target
+- **Orange zone (80-99%)**: Team approaching target
+- **Red zone (&lt;80%)**: Team below expectations
+
+Below the gauge, you'll see a breakdown of your sales team:
+- 🟢 **In Green**: Number of sellers exceeding quota
+- 🟡 **In Orange**: Number of sellers approaching quota
+- 🔴 **In Red**: Number of sellers underperforming
+
+## Sales Evolution Chart
+
+The **Monthly Sales Evolution** chart shows:
+
+- Historical sales trend (up to 13 months)
+- Actual sales vs targets for each month
+- Interactive hover details with exact values
+- Trend identification for forecasting
+
+<Note>
+  The evolution chart automatically adjusts to your selected date range in the sidebar filters.
+</Note>
+
+## Automated Insights
+
+Visor KPI generates **executive insights** automatically based on current data:
+
+```text
+Example: "The team carries $2,450,000 in sales (+12% vs previous period), 
+reaching 94% of target. 8 sellers are in green, 3 in orange, and 1 in red. 
+12 active alerts detected: 3 critical, 5 medium, 4 informative."
+```
+
+This natural language summary provides context without requiring manual analysis.
+
+## Top Rankings
+
+Three side-by-side rankings highlight your best performers:
+
+### 🏆 Top Sellers
+- Top 5 by revenue
+- Quota attainment percentage
+- Ranking position with movement indicator
+- Color-coded performance status
+
+### 🏪 Top Clients
+- Top 5 by purchase volume
+- Pareto classification (A/B/C)
+- Recent purchase frequency
+- Risk indicators if applicable
+
+### 📦 Top Products
+- Top 5 by sales volume
+- Category classification
+- Units sold
+- Revenue contribution
+
+## Active Alerts Center
+
+The alerts section surfaces critical issues requiring immediate attention:
+
+<CardGroup cols={2}>
+  <Card title="Critical Alerts" icon="circle-exclamation" color="#E84855">
+    High-severity issues:
+    - Sellers below 65% quota
+    - Key account drops >25%
+    - Critical margin issues
+  </Card>
+  
+  <Card title="Medium Priority" icon="triangle-exclamation" color="#FFB347">
+    Important but not urgent:
+    - Clients without purchases (45+ days)
+    - Seller inactivity warnings
+    - Coverage below target
+  </Card>
+  
+  <Card title="Opportunities" icon="lightbulb" color="#00C49F">
+    Growth potential:
+    - Category B clients growing fast
+    - Near-target team performance
+    - Upsell opportunities
+  </Card>
+  
+  <Card title="Informational" icon="info-circle" color="#6C9EE5">
+    FYI notifications:
+    - Products without movement
+    - Seasonal trends
+    - Portfolio insights
+  </Card>
+</CardGroup>
+
+Each alert displays:
+- **Entity affected**: Seller, client, or product name
+- **Detailed description**: What the issue is
+- **Suggested action**: Recommended next step
+
+## Portfolio Health
+
+The **Portfolio Status** panel shows:
+
+### Channel Distribution (Donut Chart)
+Visual breakdown of sales by channel:
+- Traditional retail
+- Wholesale
+- Foodservice
+- E-commerce
+
+### Client Metrics
+- **Active clients**: Number with purchases in period
+- **New clients**: First-time buyers
+- **At-risk clients**: Category A/B without recent activity
+- **Lost clients**: Previously active, now inactive
+
+## Filters and Navigation
+
+Use the **sidebar filters** to adjust your view:
+
+- **Date Range**: Select period (default: current month)
+- **Sellers**: Filter by specific team members
+- **Zones**: Filter by geographic territory
+- **Channels**: Focus on specific sales channels
+
+<Tip>
+  Changes to filters automatically recalculate all KPIs and refresh all visualizations in real-time.
+</Tip>
+
+## Workflow Example
+
+**Monday Morning Executive Review**:
+
+1. Open Executive Summary
+2. Check main KPI cards for period status
+3. Review performance gauge for team health
+4. Scan active alerts for critical issues
+5. Identify top performers and potential problems
+6. Click through to detailed views as needed
+
+**Total time**: 2-3 minutes for complete business overview
+
+## Data Calculations
+
+All metrics are calculated from the transaction dataset:
+
+- **Sales Total**: Sum of `importe_neto` for filtered period
+- **% vs Previous**: Comparison against equivalent prior period
+- **Quota Attainment**: Actual sales / assigned target
+- **Gross Margin**: Sum of `margen_neto` / sum of `importe_neto`
+- **Coverage**: Unique clients with purchases / total active clients
+
+<Note>
+  The system automatically handles period comparisons by calculating the equivalent date range in the prior period (e.g., if viewing Jan 1-15, 2024, the comparison is Jan 1-15, 2023).
+</Note>
+
+## Related Views
+
+<CardGroup cols={3}>
+  <Card title="Management View" icon="building" href="/features/management-view">
+    Deep dive into team performance
+  </Card>
+  
+  <Card title="Alerts Center" icon="bell" href="/features/alerts-center">
+    Full list of all active alerts
+  </Card>
+  
+  <Card title="Client Analysis" icon="users" href="/features/client-analysis">
+    Portfolio insights and segmentation
+  </Card>
+</CardGroup>

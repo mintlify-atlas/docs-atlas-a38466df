@@ -1,0 +1,647 @@
+---
+title: Installation
+description: Detailed installation instructions and environment setup for Visor KPI Comercial
+---
+
+## System Requirements
+
+Before installing Visor KPI Comercial, ensure your system meets these requirements:
+
+<CardGroup cols={2}>
+  <Card title="Python" icon="python">
+    **Version**: 3.10, 3.11, or 3.12
+    
+    Not compatible with Python 3.9 or earlier, or 3.13+
+  </Card>
+  <Card title="Operating System" icon="desktop">
+    - Windows 10/11
+    - macOS 11+ (Big Sur or later)
+    - Linux (Ubuntu 20.04+, Debian 11+)
+  </Card>
+  <Card title="Memory" icon="memory">
+    **Minimum**: 2GB RAM
+    
+    **Recommended**: 4GB+ for optimal performance with large datasets
+  </Card>
+  <Card title="Disk Space" icon="hard-drive">
+    **Required**: 500MB
+    
+    Includes Python environment, dependencies, and sample data
+  </Card>
+</CardGroup>
+
+## Verify Python Installation
+
+Check your Python version:
+
+<CodeGroup>
+  ```bash Windows
+  python --version
+  # Should output: Python 3.10.x, 3.11.x, or 3.12.x
+  ```
+
+  ```bash macOS/Linux
+  python3 --version
+  # Should output: Python 3.10.x, 3.11.x, or 3.12.x
+  ```
+</CodeGroup>
+
+<Warning>
+  If Python is not installed or the version is incompatible:
+  - **Windows/macOS**: Download from [python.org](https://www.python.org/downloads/)
+  - **Linux**: Use your package manager (e.g., `apt install python3.11`)
+</Warning>
+
+## Step-by-Step Installation
+
+<Steps>
+  <Step title="Clone the Repository">
+    Download the source code from GitHub:
+
+    ```bash
+    git clone https://github.com/ricardobing/excel-to-kpi-dashboard.git
+    cd excel-to-kpi-dashboard
+    ```
+
+    <Accordion title="Don't have Git?">
+      You can download the repository as a ZIP file:
+      1. Visit [https://github.com/ricardobing/excel-to-kpi-dashboard](https://github.com/ricardobing/excel-to-kpi-dashboard)
+      2. Click the green "Code" button
+      3. Select "Download ZIP"
+      4. Extract the ZIP file to your desired location
+      5. Open a terminal in the extracted directory
+    </Accordion>
+  </Step>
+
+  <Step title="Create Virtual Environment">
+    A virtual environment isolates project dependencies from your system Python:
+
+    <CodeGroup>
+      ```bash Windows (Command Prompt)
+      python -m venv .venv
+      .venv\Scripts\activate
+      ```
+
+      ```bash Windows (PowerShell)
+      python -m venv .venv
+      .venv\Scripts\Activate.ps1
+      ```
+
+      ```bash macOS/Linux
+      python3 -m venv .venv
+      source .venv/bin/activate
+      ```
+    </CodeGroup>
+
+    When activated, your terminal prompt should show `(.venv)` at the beginning.
+
+    <Note>
+      **PowerShell Execution Policy Error?**
+      
+      If you see "cannot be loaded because running scripts is disabled":
+      ```powershell
+      Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+      ```
+    </Note>
+  </Step>
+
+  <Step title="Install Dependencies">
+    Navigate to the application directory and install all required packages:
+
+    ```bash
+    cd visor_kpi
+    pip install -r requirements.txt
+    ```
+
+    This installs the following packages:
+
+    ```txt requirements.txt
+    streamlit>=1.32.0,&lt;2.0
+    pandas>=2.2.0,&lt;3.0
+    plotly>=5.19.0,&lt;6.0
+    openpyxl>=3.1.5
+    numpy>=1.26.4,&lt;2.0
+    faker>=23.2.0
+    pytest>=8.0.0
+    xlsxwriter>=3.1.9
+    python-dateutil>=2.9.0
+    ```
+
+    <Accordion title="Understanding the Dependencies">
+      | Package | Purpose |
+      |---------|----------|
+      | **streamlit** | Web application framework for building the dashboard UI |
+      | **pandas** | Data manipulation, analysis, and ETL pipeline |
+      | **plotly** | Interactive charts (line, bar, gauge, treemap, scatter) |
+      | **openpyxl** | Reading Excel (.xlsx) files |
+      | **xlsxwriter** | Writing Excel files for reports |
+      | **numpy** | Numerical computations for KPI calculations |
+      | **faker** | Generating realistic mock data (Argentina locale) |
+      | **pytest** | Running automated tests |
+      | **python-dateutil** | Advanced date/time manipulation |
+    </Accordion>
+
+    <Note>
+      Installation typically takes 2-3 minutes depending on your internet speed. You may see warnings about pip version - these are safe to ignore.
+    </Note>
+  </Step>
+
+  <Step title="Generate Sample Data">
+    Run the mock data generator to create a realistic sales dataset:
+
+    ```bash
+    python data/mock/generate_mock_data.py
+    ```
+
+    Expected output:
+
+    ```
+    Generando datos mock...
+      • Vendedores...
+      • Clientes...
+      • Productos...
+      • Objetivos...
+      • Transacciones (puede demorar ~30s)...
+
+    =======================================================
+      RESUMEN DE VALIDACIÓN — Visor KPI Mock Data
+    =======================================================
+    ✅ Vendedores generados: 12
+    ✅ Clientes generados: 180 (153 activos, 27 inactivos)
+    ✅ Productos generados: 60
+    ✅ Transacciones generadas: 29,847
+    ✅ Período cubierto: ene-2023 a mar-2026
+    ✅ Importe total: $487.562.834
+    ✅ Coherencia vendedor-cliente: 97.2% (esperado >96%)
+    ✅ Estacionalidad dic/ene: +22.3% (esperado ~25%)
+    ✅ Clientes sin compras últimos 90 días: 31
+    ✅ Productos bajo rotación (&lt;5% acumulado): 11 (esperado ~12)
+    ✅ Nulls en campos críticos: 0
+    =======================================================
+
+    📁 Excel guardado en: /path/to/visor_kpi/data/raw/mock_data.xlsx
+    ✅ Generación completada.
+    ```
+
+    <Accordion title="What Data Is Generated?">
+      The script creates a multi-sheet Excel file with:
+
+      **Sheet 1: Ventas** (~30,000 rows)
+      - Transaction-level sales data
+      - Columns: `id_venta`, `fecha`, `id_vendedor`, `id_cliente`, `id_producto`, `cantidad`, `precio_unitario`, `descuento_pct`, `importe_bruto`, `importe_neto`
+      - Spans 27 months with realistic seasonality patterns
+
+      **Sheet 2: Vendedores** (12 rows)
+      - Salesperson master data
+      - Columns: `id_vendedor`, `nombre_completo`, `zona`, `perfil`, `objetivo_mensual_base`, `antiguedad_años`, `supervisor_id`, `activo`
+      - 4 performance profiles: star, stable, development, problematic
+
+      **Sheet 3: Clientes** (180 rows)
+      - Customer master data
+      - Columns: `id_cliente`, `razon_social`, `canal`, `zona`, `id_vendedor_asignado`, `objetivo_mensual_cliente`, `fecha_alta`, `activo`
+      - 4 channels: Canal Tradicional (90), Supermercadismo (36), Mayorista (27), HoReCa (27)
+
+      **Sheet 4: Productos** (60 rows)
+      - Product catalog
+      - Columns: `id_producto`, `descripcion`, `categoria`, `precio_unitario`, `costo_unitario`, `unidad_medida`, `activo`, `baja_rotacion`
+      - 5 categories: Lácteos (10), Almacén (15), Bebidas (15), Limpieza (10), Perfumería (10)
+
+      **Sheet 5: Objetivos** (324 rows)
+      - Monthly sales objectives by salesperson
+      - Columns: `id_vendedor`, `año`, `mes`, `periodo`, `objetivo`
+      - 27 months × 12 sellers with 5% annual growth
+    </Accordion>
+
+    <Accordion title="Data Generation Logic">
+      The mock data generator creates realistic patterns:
+
+      ```python
+      # From data/mock/generate_mock_data.py
+
+      # Seasonality factors by month
+      ESTACIONALIDAD = {
+          1: 1.25,  # January - post-holiday restocking
+          7: 0.85,  # July - winter slowdown
+          12: 1.25, # December - holiday peak
+      }
+
+      # Salesperson performance profiles
+      PERFILES_FACTOR = {
+          "estrella":     {"base": 1.20, "sd": 0.08, "mejora": 0.002},
+          "estable":      {"base": 0.95, "sd": 0.08, "mejora": 0.001},
+          "desarrollo":   {"base": 0.75, "sd": 0.10, "mejora": 0.005},
+          "problematico": {"base": 0.62, "sd": 0.15, "mejora": 0.000},
+      }
+
+      # Growth trend: 8% annual ≈ 0.64% monthly compound
+      def _factor_crecimiento(mes: date) -> float:
+          meses_transcurridos = (
+              (mes.year - FECHA_INICIO.year) * 12 + 
+              (mes.month - FECHA_INICIO.month)
+          )
+          return (1.0064) ** meses_transcurridos
+      ```
+    </Accordion>
+  </Step>
+
+  <Step title="Launch the Application">
+    Start the Streamlit server:
+
+    ```bash
+    streamlit run app.py
+    ```
+
+    Streamlit will output:
+
+    ```
+    You can now view your Streamlit app in your browser.
+
+    Local URL: http://localhost:8501
+    Network URL: http://192.168.1.x:8501
+    ```
+
+    The dashboard will automatically open in your default browser. If it doesn't, manually navigate to `http://localhost:8501`
+
+    <Note>
+      First load may take 2-3 seconds while data is cached. Subsequent loads are instantaneous.
+    </Note>
+  </Step>
+</Steps>
+
+## Configuration
+
+Customize the dashboard behavior by editing `config.py`:
+
+### Colors and Theme
+
+```python config.py
+COLORS = {
+    # Primary colors
+    "primary":        "#1B3A6B",
+    "primary_light":  "#2E5FA3",
+    "accent":         "#00C49F",
+
+    # Performance traffic light
+    "success":        "#00C49F",  # Green - target met
+    "warning":        "#FFB347",  # Orange - below target
+    "danger":         "#E84855",  # Red - critical
+
+    # Dark theme
+    "bg_dark":        "#0F1923",
+    "bg_card":        "#1A2535",
+    "text_primary":   "#F0F4F8",
+    "text_secondary": "#8899AA",
+    "border":         "#2D3F55",
+}
+```
+
+### Performance Thresholds
+
+```python config.py
+THRESHOLDS = {
+    "cumplimiento_ok":      1.00,   # 100% = green
+    "cumplimiento_warning": 0.80,   # 80% = orange
+    # Below 80% = red
+
+    "caida_critica":       -0.20,   # -20% vs previous = alert
+    "crecimiento_notable":  0.15,   # +15% vs previous = highlight
+
+    "pareto_acumulado":     0.80,   # 80% volume = A customers
+    "pareto_B":             0.95,   # 80-95% = B, >95% = C
+}
+```
+
+### Data Path
+
+```python config.py
+BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(BASE_DIR, "data", "raw", "mock_data.xlsx")
+```
+
+<Accordion title="Using Your Own Data">
+  To replace mock data with your own sales file:
+
+  1. **Prepare your Excel file** with these sheets:
+     - `Ventas`: Transaction data with columns matching the structure in `src/data_loader.py`
+     - `Vendedores`: Salesperson master data
+     - `Clientes`: Customer master data
+     - `Productos`: Product catalog
+     - `Objetivos`: Monthly sales targets
+
+  2. **Update the data path** in `config.py`:
+     ```python
+     DATA_PATH = os.path.join(BASE_DIR, "data", "raw", "your_data.xlsx")
+     ```
+
+  3. **Verify column names** match the expected schema:
+     ```python
+     # Required columns in Ventas sheet:
+     required_cols = [
+         "fecha", "id_vendedor", "id_cliente", "id_producto",
+         "importe_neto", "importe_bruto", "cantidad",
+         "precio_unitario", "descuento_pct"
+     ]
+     ```
+
+  4. **Run validation**:
+     ```bash
+     pytest tests/test_mock_data.py -v
+     ```
+</Accordion>
+
+### Business Constants
+
+```python config.py
+ZONAS   = ["GBA Norte", "GBA Sur", "Interior"]
+CANALES = ["Canal Tradicional", "Supermercadismo", "Mayorista", "HoReCa"]
+
+EMPRESA = {
+    "nombre":    "Distribuidora Del Sur S.A.",
+    "periodo_inicio": date(2023, 1, 1),
+    "periodo_fin":    date(2026, 3, 31),
+}
+```
+
+## Formatting Functions
+
+The system includes utility functions for consistent number formatting:
+
+```python config.py
+def fmt_moneda(valor: float) -> str:
+    """Format as currency: $1.284.500 (Argentine style)"""
+    if valor >= 1_000:
+        s = f"{abs(valor):,.0f}".replace(",", ".")
+    else:
+        s = f"{abs(valor):.2f}".replace(".", ",")
+    return f"{'-' if valor < 0 else ''}${s}"
+
+def fmt_pct(valor: float, decimales: int = 1) -> str:
+    """Format as percentage: 84.2%"""
+    return f"{float(valor) * 100:.{decimales}f}%"
+
+def fmt_numero(valor: float) -> str:
+    """Format with thousands separator: 1.284"""
+    return f"{float(valor):,.0f}".replace(",", ".")
+```
+
+## Data Loading and Caching
+
+The ETL pipeline is defined in `src/data_loader.py`:
+
+```python src/data_loader.py
+import streamlit as st
+import pandas as pd
+from config import DATA_PATH
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_data() -> dict[str, pd.DataFrame]:
+    """
+    Reads Excel and returns dict with parsed DataFrames.
+    Keys: ventas, vendedores, clientes, productos, objetivos
+    
+    Cached for 1 hour (3600 seconds) to improve performance.
+    """
+    if not os.path.exists(DATA_PATH):
+        raise FileNotFoundError(
+            f"No se encontró el archivo de datos: {DATA_PATH}\n"
+            "Ejecutá primero: python data/mock/generate_mock_data.py"
+        )
+
+    xl = pd.ExcelFile(DATA_PATH)
+
+    # Parse Ventas sheet
+    ventas = xl.parse("Ventas")
+    ventas["fecha"] = pd.to_datetime(ventas["fecha"])
+    ventas["año"]   = ventas["fecha"].dt.year
+    ventas["mes"]   = ventas["fecha"].dt.month
+    ventas["periodo"] = ventas["fecha"].dt.to_period("M")
+    
+    # Ensure numeric columns
+    for col in ["importe_neto", "importe_bruto", "cantidad", 
+                "precio_unitario", "descuento_pct"]:
+        if col in ventas.columns:
+            ventas[col] = pd.to_numeric(ventas[col], errors="coerce").fillna(0)
+
+    # Parse other sheets...
+    vendedores = xl.parse("Vendedores")
+    clientes   = xl.parse("Clientes")
+    productos  = xl.parse("Productos")
+    objetivos  = xl.parse("Objetivos")
+
+    return {
+        "ventas":     ventas,
+        "vendedores": vendedores,
+        "clientes":   clientes,
+        "productos":  productos,
+        "objetivos":  objetivos,
+    }
+```
+
+<Note>
+  The `@st.cache_data` decorator caches the loaded data for 1 hour, significantly improving performance on subsequent page loads and filter changes.
+</Note>
+
+## KPI Engine
+
+Core business logic is in `src/kpi_engine.py`:
+
+```python src/kpi_engine.py
+import pandas as pd
+from src.pareto import calcular_pareto
+
+def kpi_ventas_periodo(
+    df: pd.DataFrame,
+    df_anterior: pd.DataFrame | None = None,
+    objetivos_df: pd.DataFrame | None = None,
+    fecha_desde: date | None = None,
+    fecha_hasta: date | None = None,
+) -> dict:
+    """
+    Aggregate sales KPIs for the period.
+
+    Returns dict with:
+        importe_total, importe_vs_anterior, objetivo_total,
+        cumplimiento_pct, transacciones_count, ticket_promedio
+    """
+    importe_total = float(df["importe_neto"].sum()) if not df.empty else 0.0
+    n_transacciones = len(df)
+    clientes_unicos = df["id_cliente"].nunique() if not df.empty else 0
+    ticket_prom = (importe_total / clientes_unicos) if clientes_unicos > 0 else 0.0
+
+    # Calculate period objective
+    objetivo_total = 0.0
+    if objetivos_df is not None and not objetivos_df.empty:
+        mask = (
+            (objetivos_df["periodo"] >= pd.Timestamp(fecha_desde)) &
+            (objetivos_df["periodo"] <= pd.Timestamp(fecha_hasta))
+        )
+        objetivo_total = float(objetivos_df[mask]["objetivo"].sum())
+
+    cumplimiento = importe_total / objetivo_total if objetivo_total > 0 else None
+
+    # Delta vs previous period
+    importe_vs_ant = None
+    if df_anterior is not None and not df_anterior.empty:
+        imp_ant = float(df_anterior["importe_neto"].sum())
+        if imp_ant > 0:
+            importe_vs_ant = (importe_total - imp_ant) / imp_ant
+
+    return {
+        "importe_total":       importe_total,
+        "importe_vs_anterior": importe_vs_ant,
+        "objetivo_total":      objetivo_total,
+        "cumplimiento_pct":    cumplimiento,
+        "transacciones_count": n_transacciones,
+        "ticket_promedio":     ticket_prom,
+        "clientes_unicos":     clientes_unicos,
+    }
+```
+
+## Running Tests
+
+The project includes a comprehensive test suite:
+
+```bash
+# Run all tests with verbose output
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_kpis.py -v
+
+# Run with coverage report
+pytest tests/ --cov=src --cov-report=html
+```
+
+Test coverage:
+
+<Tabs>
+  <Tab title="Data Validation">
+    `tests/test_mock_data.py` - 18 tests
+    - Vendor count and profile distribution
+    - Customer count and activity status
+    - Product count and categories
+    - Transaction volume and date range
+    - Referential integrity (vendor-customer assignments)
+    - Seasonality patterns
+    - Null value checks
+  </Tab>
+  <Tab title="KPI Engine">
+    `tests/test_kpis.py` - 22 tests
+    - Period sales calculations
+    - Gross margin computations
+    - Customer coverage metrics
+    - Seller performance rankings
+    - Product analysis
+    - Period-over-period comparisons
+  </Tab>
+  <Tab title="Alert Engine">
+    `tests/test_alerts.py` - 11 tests
+    - ALT001: Low fulfillment detection
+    - ALT002: Inactive customer identification
+    - ALT003: Product sales drop detection
+    - ALT004: Portfolio concentration alerts
+    - ALT006: Coverage threshold alerts
+    - ALT007: Opportunity detection
+  </Tab>
+</Tabs>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Import errors when running app.py">
+    Ensure you're running from the correct directory:
+
+    ```bash
+    # You should be in the visor_kpi directory
+    pwd  # or cd on Windows
+    # Output should end with: /visor_kpi
+
+    # Run from here
+    streamlit run app.py
+    ```
+
+    If imports still fail, check your PYTHONPATH:
+    ```python
+    import sys
+    print(sys.path)
+    ```
+  </Accordion>
+
+  <Accordion title="'data/raw/mock_data.xlsx' not found">
+    The mock data file must exist before running the app:
+
+    ```bash
+    # Generate it first
+    python data/mock/generate_mock_data.py
+
+    # Verify it was created
+    ls data/raw/
+    # Should show: mock_data.xlsx
+    ```
+  </Accordion>
+
+  <Accordion title="Port 8501 already in use">
+    Another Streamlit app is running. Either:
+
+    1. **Stop the other app**: Press Ctrl+C in its terminal
+    2. **Use a different port**:
+       ```bash
+       streamlit run app.py --server.port 8502
+       ```
+  </Accordion>
+
+  <Accordion title="Performance issues with large datasets">
+    If using your own data with >100K rows:
+
+    1. **Increase cache TTL**:
+       ```python
+       @st.cache_data(ttl=7200)  # 2 hours
+       def load_data():
+           ...
+       ```
+
+    2. **Add date filters earlier in the pipeline**:
+       ```python
+       # Filter before joins to reduce dataframe size
+       ventas = ventas[
+           (ventas["fecha"] >= pd.Timestamp("2025-01-01"))
+       ]
+       ```
+
+    3. **Consider using Parquet instead of Excel**:
+       ```python
+       df.to_parquet("data.parquet", compression="gzip")
+       ```
+  </Accordion>
+
+  <Accordion title="Excel file locked on Windows">
+    If you see "Permission denied" when regenerating data:
+
+    1. Close Excel if `mock_data.xlsx` is open
+    2. Delete the existing file:
+       ```bash
+       del data\raw\mock_data.xlsx
+       ```
+    3. Regenerate:
+       ```bash
+       python data/mock/generate_mock_data.py
+       ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start Guide" icon="rocket" href="/quickstart">
+    Learn how to use the dashboard and explore all features
+  </Card>
+  <Card title="Configuration" icon="wrench" href="/configuration/settings">
+    Customize settings, thresholds, and business rules
+  </Card>
+  <Card title="Development Setup" icon="code" href="/development/setup">
+    Set up your development environment
+  </Card>
+  <Card title="Technical Reference" icon="book" href="/technical/architecture">
+    Detailed documentation of all modules and functions
+  </Card>
+</CardGroup>

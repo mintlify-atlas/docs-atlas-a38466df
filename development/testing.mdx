@@ -1,0 +1,518 @@
+---
+title: Testing
+description: Run and understand the automated test suite for Visor KPI Comercial
+icon: flask
+---
+
+## Overview
+
+Visor KPI Comercial includes a comprehensive test suite with **51 automated tests** that validate data quality, KPI calculations, Pareto analysis, and alert rules.
+
+<Note>
+  All tests are written using **pytest** and cover the core business logic in the `src/` directory, ensuring the application behaves correctly regardless of UI changes.
+</Note>
+
+## Running Tests
+
+### Run All Tests
+
+<Steps>
+  <Step title="Navigate to Project Directory">
+    ```bash
+    cd visor_kpi
+    ```
+  </Step>
+
+  <Step title="Activate Virtual Environment">
+    <CodeGroup>
+      ```bash Windows
+      .venv\Scripts\activate
+      ```
+
+      ```bash macOS/Linux
+      source .venv/bin/activate
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Run pytest">
+    ```bash
+    pytest tests/ -v
+    ```
+
+    Expected output:
+    ```
+    ======================== test session starts =========================
+    collected 51 items
+
+    tests/test_mock_data.py::test_hojas_excel_existen PASSED       [  1%]
+    tests/test_mock_data.py::test_n_vendedores PASSED              [  3%]
+    tests/test_mock_data.py::test_n_clientes PASSED                [  5%]
+    ...
+    tests/test_alerts.py::test_alt001_se_dispara_con_bajo_cumplimiento PASSED [100%]
+
+    ========================= 51 passed in 4.23s =========================
+    ```
+  </Step>
+</Steps>
+
+### Run Specific Test Files
+
+<CodeGroup>
+  ```bash Mock Data Tests
+  pytest tests/test_mock_data.py -v
+  ```
+
+  ```bash KPI Engine Tests
+  pytest tests/test_kpis.py -v
+  ```
+
+  ```bash Alert Engine Tests
+  pytest tests/test_alerts.py -v
+  ```
+</CodeGroup>
+
+### Run Specific Test Functions
+
+Run a single test by name:
+
+```bash
+pytest tests/test_kpis.py::test_pareto_suma_100 -v
+```
+
+## Test Suite Structure
+
+The test suite is organized into three main categories:
+
+### 1. Mock Data Validation (`test_mock_data.py`)
+
+Validates the integrity and business logic of the generated dataset.
+
+#### Key Tests
+
+<AccordionGroup>
+  <Accordion title="Excel Structure Tests">
+    ```python test_mock_data.py
+    def test_hojas_excel_existen():
+        """Verifies all required sheets exist in the Excel file."""
+        xl = pd.ExcelFile(DATA_PATH)
+        for hoja in ["Ventas", "Vendedores", "Clientes", "Productos", "Objetivos"]:
+            assert hoja in xl.sheet_names
+    ```
+
+    Ensures the Excel file contains all expected sheets: Ventas (Sales), Vendedores (Sales Reps), Clientes (Clients), Productos (Products), and Objetivos (Targets).
+  </Accordion>
+
+  <Accordion title="Data Volume Tests">
+    ```python test_mock_data.py
+    def test_n_vendedores(data):
+        assert len(data["vendedores"]) == 12
+
+    def test_n_clientes(data):
+        assert len(data["clientes"]) == 180
+
+    def test_n_productos(data):
+        assert len(data["productos"]) == 60
+
+    def test_volumen_transacciones(data):
+        n = len(data["ventas"])
+        assert n >= 8_000, f"Insufficient transactions: {n}"
+        assert n <= 40_000, f"Excessive transactions: {n}"
+    ```
+
+    Validates that the dataset contains the expected number of entities and transaction volume.
+  </Accordion>
+
+  <Accordion title="Referential Integrity Tests">
+    ```python test_mock_data.py
+    def test_coherencia_vendedor_cliente(data):
+        """Validates that >96% of sales are from the assigned sales rep."""
+        ventas = data["ventas"].copy()
+        clientes = data["clientes"][["id_cliente", "id_vendedor_asignado"]]
+        merged = ventas.merge(clientes, on="id_cliente", how="left")
+        n_coherente = (merged["id_vendedor"] == merged["id_vendedor_asignado"]).sum()
+        pct = n_coherente / len(merged)
+        assert pct >= 0.96
+    ```
+
+    Ensures business logic consistency: sales should be made by the client's assigned sales representative.
+  </Accordion>
+
+  <Accordion title="Seasonality Tests">
+    ```python test_mock_data.py
+    def test_estacionalidad_diciembre_enero(data):
+        """December and January have >15% more sales than monthly average."""
+        ventas = data["ventas"].copy()
+        ventas["mes_num"] = pd.to_datetime(ventas["fecha"]).dt.month
+        
+        mensual = ventas.groupby(ventas["fecha"].dt.to_period("M"))["importe_neto"].sum()
+        promedio = mensual.mean()
+        
+        meses_dic_ene = ventas[ventas["mes_num"].isin([12, 1])]
+        prom_dic_ene = meses_dic_ene.groupby(meses_dic_ene["fecha"].dt.to_period("M"))["importe_neto"].sum().mean()
+        
+        factor = prom_dic_ene / promedio - 1
+        assert factor >= 0.10
+    ```
+
+    Validates that the mock data includes realistic seasonal patterns with peak sales in December and January.
+  </Accordion>
+
+  <Accordion title="Data Quality Tests">
+    ```python test_mock_data.py
+    def test_sin_nulls_criticos(data):
+        """Critical fields have no null values."""
+        criticos = ["id_venta", "fecha", "id_vendedor", "id_cliente", "id_producto", "importe_neto"]
+        for col in criticos:
+            assert ventas[col].isnull().sum() == 0
+
+    def test_importes_positivos(data):
+        """All net amounts are positive."""
+        assert (ventas["importe_neto"] > 0).all()
+
+    def test_fechas_en_rango(data):
+        """All dates are between Jan 2023 and Mar 2026."""
+        assert ventas["fecha"].min() >= pd.Timestamp("2023-01-01")
+        assert ventas["fecha"].max() <= pd.Timestamp("2026-03-31")
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### 2. KPI Engine Tests (`test_kpis.py`)
+
+Validates all KPI calculation functions in `src/kpi_engine.py` and `src/pareto.py`.
+
+#### Pareto Analysis Tests
+
+```python test_kpis.py
+def test_pareto_suma_100():
+    """Participation % in Pareto analysis sums to exactly 1.0."""
+    from src.pareto import calcular_pareto
+    df = make_simple_df()
+    grp = df.groupby("id_producto")["importe_neto"].sum().reset_index()
+    result = calcular_pareto(grp, "importe_neto", "id_producto")
+    total_pct = result["participacion_pct"].sum()
+    assert abs(total_pct - 1.0) < 0.01
+
+def test_pareto_categoria_A_cubre_80pct():
+    """Category A covers 70-90% of total volume (80/20 rule)."""
+    result = calcular_pareto(grp, "importe_neto", "id_producto")
+    vol_a = result[result["categoria_pareto"] == "A"]["importe_neto"].sum()
+    pct_a = vol_a / result["importe_neto"].sum()
+    assert 0.70 <= pct_a <= 0.90
+
+def test_pareto_acumulado_monotono():
+    """Cumulative % must be monotonically increasing."""
+    diffs = result["acumulado_pct"].diff().dropna()
+    assert (diffs >= -0.001).all()
+```
+
+#### KPI Calculation Tests
+
+<CodeGroup>
+  ```python Sales Period KPIs
+  def test_kpi_ventas_estructura():
+      """kpi_ventas_periodo returns expected fields."""
+      from src.kpi_engine import kpi_ventas_periodo
+      result = kpi_ventas_periodo(df)
+      for key in ["importe_total", "transacciones_count", "clientes_unicos"]:
+          assert key in result
+
+  def test_delta_periodo_conocido():
+      """Validates delta when current = 2× previous period."""
+      df_act = pd.DataFrame({"importe_neto": [100_000.0]*5, ...})
+      df_ant = pd.DataFrame({"importe_neto": [50_000.0]*5, ...})
+      res = kpi_ventas_periodo(df_act, df_anterior=df_ant)
+      assert abs(res["importe_vs_anterior"] - 1.0) < 0.01  # 100% growth
+  ```
+
+  ```python Margin KPIs
+  def test_kpi_margen_logico():
+      """Average margin is in 0–100% range."""
+      from src.kpi_engine import kpi_margen
+      result = kpi_margen(df)
+      assert 0 <= result["margen_pct_promedio"] <= 1.0
+  ```
+
+  ```python Client Coverage KPIs
+  def test_kpi_cobertura_total_cuando_todos_compran():
+      """Coverage = 100% when all active clients purchased."""
+      from src.kpi_engine import kpi_cobertura_clientes
+      ids = ["C001", "C002", "C003"]
+      df_v = pd.DataFrame({"id_cliente": ids, "importe_neto": [10_000]*3})
+      df_c = pd.DataFrame({"id_cliente": ids, "activo": True})
+      result = kpi_cobertura_clientes(df_v, df_c)
+      assert result["cobertura_pct"] == 1.0
+  ```
+
+  ```python Sales Rep KPIs
+  def test_kpi_ranking_unico_y_consecutivo():
+      """Rankings are unique and consecutive from 1."""
+      from src.kpi_engine import kpi_por_vendedor
+      result = kpi_por_vendedor(df, objetivos)
+      rankings = sorted(result["ranking_actual"].tolist())
+      assert rankings == list(range(1, len(result) + 1))
+  ```
+</CodeGroup>
+
+### 3. Alert Engine Tests (`test_alerts.py`)
+
+Validates the 7 alert rules (ALT001–ALT007) in `src/alerts_engine.py`.
+
+#### Alert Schema Tests
+
+```python test_alerts.py
+def test_alertas_esquema_columnas():
+    """Alert DataFrame has all required columns."""
+    result = invocar_alertas()
+    cols_esperadas = [
+        "id_alerta", "nombre", "severidad",
+        "entidad_tipo", "entidad_id", "entidad_nombre",
+        "valor_actual", "valor_referencia",
+        "descripcion_detalle", "fecha_deteccion", "accion_sugerida",
+    ]
+    for col in cols_esperadas:
+        assert col in result.columns
+
+def test_alertas_severidad_solo_valores_validos():
+    """Severities are only: alta, media, baja, info."""
+    invalidas = set(result["severidad"].unique()) - {"alta", "media", "baja", "info"}
+    assert not invalidas
+```
+
+#### Specific Alert Rule Tests
+
+<AccordionGroup>
+  <Accordion title="ALT001: Low Performance Sales Rep (&lt;65% quota)">
+    ```python test_alerts.py
+    def test_alt001_se_dispara_con_bajo_cumplimiento():
+        """ALT001 fires when a sales rep has &lt;65% quota achievement."""
+        # Target: 1,000,000 — actual sales: 200,000 (20% → triggers ALT001)
+        df = pd.DataFrame([{
+            "fecha": today - pd.Timedelta(days=2),
+            "id_vendedor": "V001",
+            "importe_neto": 200_000.0,
+        }])
+        objetivos = pd.DataFrame([{
+            "id_vendedor": "V001",
+            "objetivo": 1_000_000,
+        }])
+        result = get_alertas_activas(df, None, clientes, productos, objetivos)
+        alt001 = result[result["id_alerta"] == "ALT001"]
+        assert len(alt001) >= 1
+
+    def test_alt001_no_se_dispara_con_cumplimiento_ok():
+        """ALT001 does NOT fire when quota is ≥65%."""
+        # 800,000 / 1,000,000 = 80% → no alert
+        assert len(alt001) == 0
+    ```
+  </Accordion>
+
+  <Accordion title="ALT002: Client Without Recent Purchases (45+ days)">
+    ```python test_alerts.py
+    def test_alt002_se_dispara_cliente_sin_compra_reciente():
+        """ALT002 detects active client without purchase in 60+ days."""
+        df = pd.DataFrame([{
+            "fecha": today - pd.Timedelta(days=60),
+            "id_cliente": "C001",
+            "importe_neto": 50_000.0,
+        }])
+        clientes = pd.DataFrame([{
+            "id_cliente": "C001",
+            "activo": True,
+        }])
+        result = get_alertas_activas(df, None, clientes, productos)
+        alt002 = result[result["id_alerta"] == "ALT002"]
+        assert len(alt002) >= 1
+    ```
+  </Accordion>
+
+  <Accordion title="ALT004: Product Without Movement (60+ days)">
+    ```python test_alerts.py
+    def test_alt004_se_dispara_producto_sin_movimiento():
+        """ALT004 detects active product without sales in 60+ days."""
+        df = pd.DataFrame([{
+            "fecha": today - pd.Timedelta(days=70),
+            "id_producto": "P001",
+            "importe_neto": 10_000.0,
+        }])
+        productos = pd.DataFrame([{
+            "id_producto": "P001",
+            "activo": True,
+        }])
+        result = get_alertas_activas(df, None, clientes, productos)
+        alt004 = result[result["id_alerta"] == "ALT004"]
+        assert len(alt004) >= 1
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Test Coverage
+
+The test suite provides comprehensive coverage across all critical business logic:
+
+<CardGroup cols={2}>
+  <Card title="Mock Data Validation" icon="database">
+    **19 tests** covering:
+    - Excel structure integrity
+    - Data volume validation
+    - Referential consistency
+    - Seasonality patterns
+    - Null value checks
+    - Date range validation
+  </Card>
+
+  <Card title="KPI Engine" icon="calculator">
+    **22 tests** covering:
+    - Pareto analysis (80/20 rule)
+    - Sales period KPIs
+    - Margin calculations
+    - Client coverage metrics
+    - Sales rep rankings
+    - Period-over-period deltas
+  </Card>
+
+  <Card title="Alert Engine" icon="bell">
+    **10 tests** covering:
+    - Alert schema validation
+    - ALT001 (low quota achievement)
+    - ALT002 (inactive clients)
+    - ALT004 (stagnant products)
+    - ALT006 (growth opportunities)
+    - Edge case handling
+  </Card>
+
+  <Card title="Integration Tests" icon="plug">
+    **3 tests** using real mock data:
+    - End-to-end KPI calculation
+    - Full alert engine execution
+    - Real dataset validation
+  </Card>
+</CardGroup>
+
+## Continuous Integration
+
+### GitHub Actions Workflow
+
+Example CI configuration for automated testing:
+
+```yaml .github/workflows/test.yml
+name: Test Suite
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install dependencies
+        run: |
+          cd visor_kpi
+          pip install -r requirements.txt
+      
+      - name: Generate mock data
+        run: |
+          cd visor_kpi
+          python data/mock/generate_mock_data.py
+      
+      - name: Run tests
+        run: |
+          cd visor_kpi
+          pytest tests/ -v --tb=short
+```
+
+## Debugging Failed Tests
+
+### Verbose Output
+
+```bash
+pytest tests/ -vv
+```
+
+### Show Print Statements
+
+```bash
+pytest tests/ -v -s
+```
+
+### Stop at First Failure
+
+```bash
+pytest tests/ -x
+```
+
+### Run Last Failed Tests Only
+
+```bash
+pytest --lf
+```
+
+### Full Traceback
+
+```bash
+pytest tests/ --tb=long
+```
+
+## Writing New Tests
+
+### Test File Naming
+
+- Test files must start with `test_` (e.g., `test_new_feature.py`)
+- Test functions must start with `test_` (e.g., `def test_calculation():`)
+
+### Example Test
+
+```python tests/test_new_feature.py
+import pytest
+import pandas as pd
+from src.kpi_engine import nueva_funcion
+
+def test_nueva_funcion_retorna_dataframe():
+    """nueva_funcion should return a DataFrame."""
+    df = pd.DataFrame({"col": [1, 2, 3]})
+    result = nueva_funcion(df)
+    assert isinstance(result, pd.DataFrame)
+
+def test_nueva_funcion_maneja_datos_vacios():
+    """nueva_funcion should handle empty DataFrames gracefully."""
+    df_empty = pd.DataFrame()
+    result = nueva_funcion(df_empty)
+    assert len(result) == 0
+```
+
+### Using Fixtures
+
+```python
+@pytest.fixture
+def sample_data():
+    """Reusable test data fixture."""
+    return pd.DataFrame({
+        "id_venta": ["T001", "T002"],
+        "importe_neto": [10000, 15000],
+    })
+
+def test_con_fixture(sample_data):
+    assert len(sample_data) == 2
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Contributing Guidelines" icon="code-branch" href="/development/contributing">
+    Learn how to contribute code and submit pull requests
+  </Card>
+  <Card title="Development Setup" icon="wrench" href="/development/setup">
+    Back to environment setup instructions
+  </Card>
+</CardGroup>

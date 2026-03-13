@@ -1,0 +1,379 @@
+---
+title: 'Custom Sales Objectives'
+description: 'How to define and manage custom sales objectives for salespeople and teams'
+---
+
+## Overview
+
+Sales objectives (objetivos) are monthly sales targets assigned to each salesperson. The system uses these objectives to calculate achievement percentages, trigger performance alerts, and display semaphore indicators.
+
+## Data Structure
+
+Objectives are stored in the **Objetivos** sheet of the Excel data file (`mock_data.xlsx`). The required structure is:
+
+<ParamField path="id_vendedor" type="string" required>
+  Unique identifier for the salesperson (must match `Vendedores.id_vendedor`)
+</ParamField>
+
+<ParamField path="año" type="integer" required>
+  Year of the objective (e.g., 2024, 2025)
+</ParamField>
+
+<ParamField path="mes" type="integer" required>
+  Month of the objective (1-12)
+</ParamField>
+
+<ParamField path="periodo" type="date" required>
+  Date representation of the period (typically first day of month)
+</ParamField>
+
+<ParamField path="objetivo" type="float" required>
+  Target sales amount in local currency for this salesperson in this month
+</ParamField>
+
+### Example Data
+
+| id_vendedor | año  | mes | periodo    | objetivo   |
+|-------------|------|-----|------------|------------|
+| V001        | 2024 | 1   | 2024-01-01 | 1,500,000  |
+| V001        | 2024 | 2   | 2024-02-01 | 1,500,000  |
+| V001        | 2024 | 3   | 2024-03-01 | 1,575,000  |
+| V002        | 2024 | 1   | 2024-01-01 | 1,200,000  |
+| V002        | 2024 | 2   | 2024-02-01 | 1,200,000  |
+
+## Loading Objectives
+
+Objectives are automatically loaded by the `load_data()` function in `data_loader.py`:
+
+```python
+from src.data_loader import load_data
+
+data = load_data()
+objetivos_df = data["objetivos"]
+
+# Objectives are automatically parsed with:
+# - objetivo converted to numeric (float)
+# - periodo converted to datetime
+# - Missing values filled with 0
+```
+
+## Setting Objectives
+
+There are several approaches to setting sales objectives:
+
+### 1. Base Monthly Objective
+
+Set a constant monthly target for each salesperson:
+
+```python
+import pandas as pd
+from datetime import date
+from dateutil.relativedelta import relativedelta
+
+def create_flat_objectives(vendedores, objetivo_mensual, fecha_inicio, fecha_fin):
+    """
+    Create flat monthly objectives for all salespeople.
+    
+    Args:
+        vendedores: List of salesperson IDs
+        objetivo_mensual: Monthly target amount (same for all months)
+        fecha_inicio: Start date
+        fecha_fin: End date
+    """
+    rows = []
+    current = fecha_inicio.replace(day=1)
+    
+    while current <= fecha_fin:
+        for vendedor_id in vendedores:
+            rows.append({
+                "id_vendedor": vendedor_id,
+                "año": current.year,
+                "mes": current.month,
+                "periodo": current,
+                "objetivo": objetivo_mensual
+            })
+        current += relativedelta(months=1)
+    
+    return pd.DataFrame(rows)
+
+# Example: $1.5M monthly objective for all salespeople
+objetivos = create_flat_objectives(
+    vendedores=["V001", "V002", "V003"],
+    objetivo_mensual=1_500_000,
+    fecha_inicio=date(2024, 1, 1),
+    fecha_fin=date(2024, 12, 31)
+)
+```
+
+### 2. Growth-Based Objectives
+
+Apply annual growth percentages to objectives:
+
+```python
+def create_growth_objectives(vendedores_base, crecimiento_anual, fecha_inicio, fecha_fin):
+    """
+    Create objectives with compound annual growth.
+    
+    Args:
+        vendedores_base: Dict mapping vendedor_id to base monthly objective
+        crecimiento_anual: Annual growth rate (e.g., 0.05 for 5% growth)
+        fecha_inicio: Start date
+        fecha_fin: End date
+    """
+    rows = []
+    current = fecha_inicio.replace(day=1)
+    
+    while current <= fecha_fin:
+        # Calculate years elapsed since start
+        years_elapsed = (current.year - fecha_inicio.year) + \
+                       (current.month - fecha_inicio.month) / 12
+        
+        for vendedor_id, objetivo_base in vendedores_base.items():
+            # Apply compound growth
+            objetivo_ajustado = objetivo_base * ((1 + crecimiento_anual) ** years_elapsed)
+            
+            rows.append({
+                "id_vendedor": vendedor_id,
+                "año": current.year,
+                "mes": current.month,
+                "periodo": current,
+                "objetivo": round(objetivo_ajustado, -3)  # Round to thousands
+            })
+        
+        current += relativedelta(months=1)
+    
+    return pd.DataFrame(rows)
+
+# Example: 5% annual growth
+objetivos = create_growth_objectives(
+    vendedores_base={
+        "V001": 1_500_000,
+        "V002": 1_200_000,
+        "V003": 900_000
+    },
+    crecimiento_anual=0.05,
+    fecha_inicio=date(2024, 1, 1),
+    fecha_fin=date(2026, 12, 31)
+)
+```
+
+### 3. Seasonal Objectives
+
+Adjust objectives based on seasonal patterns:
+
+```python
+# Seasonal factors by month
+ESTACIONALIDAD = {
+    1: 1.25,  # January - high season
+    2: 1.00,
+    3: 1.05,
+    4: 1.00,
+    5: 1.05,
+    6: 0.95,
+    7: 0.85,  # July - low season
+    8: 0.95,
+    9: 1.00,
+    10: 1.05,
+    11: 1.10,
+    12: 1.25, # December - high season
+}
+
+def create_seasonal_objectives(vendedores_base, estacionalidad, fecha_inicio, fecha_fin):
+    """
+    Create objectives adjusted for seasonal patterns.
+    
+    Args:
+        vendedores_base: Dict mapping vendedor_id to base monthly objective
+        estacionalidad: Dict mapping month (1-12) to seasonal factor
+        fecha_inicio: Start date
+        fecha_fin: End date
+    """
+    rows = []
+    current = fecha_inicio.replace(day=1)
+    
+    while current <= fecha_fin:
+        factor_estacional = estacionalidad.get(current.month, 1.0)
+        
+        for vendedor_id, objetivo_base in vendedores_base.items():
+            objetivo_ajustado = objetivo_base * factor_estacional
+            
+            rows.append({
+                "id_vendedor": vendedor_id,
+                "año": current.year,
+                "mes": current.month,
+                "periodo": current,
+                "objetivo": round(objetivo_ajustado, -3)
+            })
+        
+        current += relativedelta(months=1)
+    
+    return pd.DataFrame(rows)
+```
+
+### 4. Individual Custom Objectives
+
+Manually set different objectives for specific periods:
+
+```python
+objetivos = pd.DataFrame([
+    # V001 - Senior seller with high targets
+    {"id_vendedor": "V001", "año": 2024, "mes": 1, 
+     "periodo": date(2024, 1, 1), "objetivo": 2_000_000},
+    {"id_vendedor": "V001", "año": 2024, "mes": 2,
+     "periodo": date(2024, 2, 1), "objetivo": 2_100_000},
+    
+    # V002 - New seller with ramping targets
+    {"id_vendedor": "V002", "año": 2024, "mes": 1,
+     "periodo": date(2024, 1, 1), "objetivo": 500_000},
+    {"id_vendedor": "V002", "año": 2024, "mes": 2,
+     "periodo": date(2024, 2, 1), "objetivo": 750_000},
+    {"id_vendedor": "V002", "año": 2024, "mes": 3,
+     "periodo": date(2024, 3, 1), "objetivo": 1_000_000},
+])
+```
+
+## Updating Objectives in Excel
+
+To update objectives in your data file:
+
+1. Open `mock_data.xlsx` in Excel
+2. Navigate to the **Objetivos** sheet
+3. Edit or add rows following the required structure
+4. Ensure all `id_vendedor` values exist in the **Vendedores** sheet
+5. Save the file
+6. Restart the Streamlit application to reload data (cache TTL: 1 hour)
+
+<Warning>
+**Data Validation**
+
+The system will:
+- Convert `objetivo` to numeric (invalid values become 0)
+- Parse `periodo` as datetime
+- Filter objectives by date range in reports
+
+Ensure data types are correct to avoid unexpected calculations.
+</Warning>
+
+## Using Objectives in KPI Calculations
+
+The `kpi_engine.py` module automatically incorporates objectives:
+
+```python
+from src.kpi_engine import calcular_kpi_resumen
+from src.data_loader import load_data
+
+data = load_data()
+
+kpis = calcular_kpi_resumen(
+    df_ventas=filtered_sales_data,
+    df_ventas_ant=previous_period_data,
+    objetivos_df=data["objetivos"],
+    fecha_desde=date(2024, 1, 1),
+    fecha_hasta=date(2024, 1, 31)
+)
+
+# Returns:
+# {
+#     'importe_total': 4_200_000,
+#     'objetivo_total': 4_500_000,
+#     'cumplimiento': 0.933,      # 93.3%
+#     'cumplimiento_pct': '93.3%',
+#     'color_semaforo': '#FFB347',  # Orange - warning zone
+#     ...
+# }
+```
+
+### Calculating Achievement
+
+The system calculates achievement as:
+
+```python
+cumplimiento = importe_total / objetivo_total if objetivo_total > 0 else None
+```
+
+Where:
+- `importe_total` = sum of all sales in the period
+- `objetivo_total` = sum of all objectives for salespeople in the period
+- `cumplimiento` = achievement ratio (e.g., 0.95 = 95%)
+
+## Base Objectives in Vendedores Sheet
+
+Each salesperson has an `objetivo_mensual_base` field in the **Vendedores** sheet:
+
+```python
+# Vendedores sheet example
+vendedores = pd.DataFrame([
+    {
+        "id_vendedor": "V001",
+        "nombre_completo": "Juan Pérez",
+        "objetivo_mensual_base": 1_500_000,  # Base monthly target
+        "zona": "GBA Norte",
+        ...
+    }
+])
+```
+
+This base objective can be used as a starting point for generating the **Objetivos** sheet data, as shown in the growth and seasonal examples above.
+
+## Objective Aggregation
+
+Objectives are aggregated across different dimensions:
+
+### By Time Period
+
+```python
+# Total objective for January 2024
+mask = (objetivos_df["periodo"] >= pd.Timestamp("2024-01-01")) & \
+       (objetivos_df["periodo"] <= pd.Timestamp("2024-01-31"))
+objetivo_enero = objetivos_df[mask]["objetivo"].sum()
+```
+
+### By Salesperson
+
+```python
+# Objectives by salesperson for Q1 2024
+mask = (objetivos_df["periodo"] >= pd.Timestamp("2024-01-01")) & \
+       (objetivos_df["periodo"] <= pd.Timestamp("2024-03-31"))
+objetivos_q1 = objetivos_df[mask].groupby("id_vendedor")["objetivo"].sum()
+```
+
+### By Zone or Team
+
+```python
+# Merge with vendedores to get zone information
+vendedores_df = data["vendedores"]
+objetivos_con_zona = objetivos_df.merge(
+    vendedores_df[["id_vendedor", "zona"]],
+    on="id_vendedor"
+)
+
+# Aggregate by zone
+objetivos_por_zona = objetivos_con_zona.groupby("zona")["objetivo"].sum()
+```
+
+## Best Practices
+
+<Check>
+**Recommended Practices**
+
+1. **Consistency** - Use the same objective setting methodology across all salespeople for fair comparison
+2. **Realistic Targets** - Base objectives on historical data and market conditions
+3. **Regular Updates** - Review and adjust objectives quarterly or semi-annually
+4. **Document Changes** - Keep a changelog of objective modifications and reasons
+5. **Communicate Clearly** - Ensure salespeople understand how their objectives are calculated
+</Check>
+
+<Warning>
+**Common Pitfalls**
+
+- Setting objectives too high demotivates teams (constant red indicators)
+- Setting objectives too low reduces challenge and growth (always green)
+- Ignoring seasonality leads to unfair monthly comparisons
+- Missing data for new salespeople results in null achievement values
+</Warning>
+
+## See Also
+
+- [Performance Thresholds](/configuration/thresholds) - How objectives are evaluated
+- [KPI Engine](/technical/components/kpi-engine) - KPI calculation functions
+- [Data Loading](/technical/components/data-loader) - Data structure and loading process

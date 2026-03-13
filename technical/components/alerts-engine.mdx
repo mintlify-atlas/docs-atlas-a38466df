@@ -1,0 +1,510 @@
+---
+title: "Alerts Engine"
+description: "Sistema de alertas comerciales con 7 reglas automatizadas para detectar riesgos y oportunidades"
+icon: "bell"
+---
+
+## Descripción
+
+El motor de alertas (`alerts_engine.py`) evalúa reglas comerciales sobre los datos de ventas y retorna un DataFrame con alertas activas. Detecta situaciones críticas, oportunidades comerciales y genera acciones sugeridas.
+
+**Características:**
+- 7 reglas predefinidas (ALT001-ALT007)
+- Clasificación por severidad: alta, media, baja, info
+- Alertas vinculadas a entidades (vendedor, cliente, producto, equipo)
+- Valores de referencia y actuales para contexto
+- Acciones sugeridas automáticas
+
+---
+
+## Función Principal
+
+### get_alertas_activas()
+
+Evalúa todas las reglas y retorna DataFrame de alertas detectadas.
+
+```python
+def get_alertas_activas(
+    df: pd.DataFrame,
+    df_anterior: pd.DataFrame | None,
+    clientes_df: pd.DataFrame,
+    productos_df: pd.DataFrame,
+    objetivos_df: pd.DataFrame | None = None,
+    fecha_hasta: date | None = None,
+) -> pd.DataFrame
+```
+
+<ParamField path="df" type="pd.DataFrame" required>
+  DataFrame de ventas del período actual con columnas:
+  - `fecha`, `id_vendedor`, `id_cliente`, `id_producto`
+  - `importe_neto`, `nombre_vendedor`
+</ParamField>
+
+<ParamField path="df_anterior" type="pd.DataFrame | None" required>
+  DataFrame del período anterior (puede ser `None`)
+</ParamField>
+
+<ParamField path="clientes_df" type="pd.DataFrame" required>
+  Maestro de clientes con columnas:
+  - `id_cliente`, `razon_social`, `activo`
+</ParamField>
+
+<ParamField path="productos_df" type="pd.DataFrame" required>
+  Maestro de productos con:
+  - `id_producto`, `descripcion`, `activo`
+</ParamField>
+
+<ParamField path="objetivos_df" type="pd.DataFrame | None" default="None">
+  Objetivos por vendedor y período
+</ParamField>
+
+<ParamField path="fecha_hasta" type="date | None" default="None">
+  Fecha de referencia (default: `date.today()`)
+</ParamField>
+
+<ResponseField name="return" type="pd.DataFrame">
+  DataFrame con una fila por alerta detectada y las siguientes columnas:
+  
+  <Expandable title="Estructura del DataFrame de alertas">
+    - `id_alerta` (str): Código único (ALT001-ALT007)
+    - `nombre` (str): Nombre descriptivo de la alerta
+    - `severidad` (str): "alta", "media", "baja", o "info"
+    - `entidad_tipo` (str): "vendedor", "cliente", "producto", "equipo"
+    - `entidad_id` (str): ID de la entidad afectada
+    - `entidad_nombre` (str): Nombre legible de la entidad
+    - `valor_actual` (float): Valor que disparó la alerta
+    - `valor_referencia` (float): Umbral o valor de comparación
+    - `descripcion_detalle` (str): Descripción contextual
+    - `fecha_deteccion` (date): Fecha de detección
+    - `accion_sugerida` (str): Recomendación de acción
+  </Expandable>
+</ResponseField>
+
+**Ejemplo de uso:**
+
+```python
+from src.alerts_engine import get_alertas_activas
+from datetime import date
+
+alertas = get_alertas_activas(
+    df=ventas_marzo,
+    df_anterior=ventas_febrero,
+    clientes_df=clientes,
+    productos_df=productos,
+    objetivos_df=objetivos,
+    fecha_hasta=date(2026, 3, 31)
+)
+
+# Filtrar alertas críticas
+criticas = alertas[alertas["severidad"] == "alta"]
+print(f"Alertas críticas: {len(criticas)}")
+
+for _, alerta in criticas.iterrows():
+    print(f"- {alerta['nombre']}: {alerta['entidad_nombre']}")
+    print(f"  {alerta['descripcion_detalle']}")
+    print(f"  Acción: {alerta['accion_sugerida']}")
+```
+
+---
+
+## Reglas de Alertas
+
+Las 7 reglas están definidas en `ALERT_RULES`:
+
+### ALT001: Vendedor bajo rendimiento crítico
+
+<CardGroup cols={2}>
+  <Card title="Condición" icon="circle-exclamation">
+    Cumplimiento < 65% en los últimos 30 días
+  </Card>
+  <Card title="Severidad" icon="triangle-exclamation">
+    **Alta** 🔴
+  </Card>
+</CardGroup>
+
+**Entidad:** Vendedor
+
+**Acción sugerida:** "Revisar cartera y objetivos con supervisor"
+
+**Lógica de detección:**
+- Calcula ventas de cada vendedor en los últimos 30 días
+- Compara contra objetivo mensual del período
+- Dispara si `cumplimiento < 0.65`
+
+**Campos en la alerta:**
+- `valor_actual`: Cumplimiento (ej: 0.58 = 58%)
+- `valor_referencia`: 0.65
+- `descripcion_detalle`: "Cumplimiento: 58.0% (umbral: 65%)"
+
+---
+
+### ALT002: Cliente sin compras (riesgo de pérdida)
+
+<CardGroup cols={2}>
+  <Card title="Condición" icon="user-slash">
+    Cliente activo sin compras en los últimos 45 días
+  </Card>
+  <Card title="Severidad" icon="circle-exclamation">
+    **Media** 🟡
+  </Card>
+</CardGroup>
+
+**Entidad:** Cliente
+
+**Acción sugerida:** "Contacto de recuperación urgente"
+
+**Lógica:**
+- Identifica clientes marcados como `activo=True`
+- Busca última compra de cada cliente
+- Alerta si `ultima_compra < (hoy - 45 días)` o sin compras
+
+**Campos:**
+- `valor_actual`: Días sin comprar (ej: 52)
+- `valor_referencia`: 45
+- `descripcion_detalle`: "Sin compras hace 52 días"
+
+---
+
+### ALT003: Caída de venta en cliente relevante
+
+<CardGroup cols={2}>
+  <Card title="Condición" icon="arrow-trend-down">
+    Cliente categoría A con caída >25% vs mes anterior
+  </Card>
+  <Card title="Severidad" icon="triangle-exclamation">
+    **Alta** 🔴
+  </Card>
+</CardGroup>
+
+**Entidad:** Cliente
+
+**Acción sugerida:** "Visita de cuenta clave"
+
+**Lógica:**
+1. Calcula Pareto del período actual
+2. Identifica clientes en categoría **A** (top 80% acumulado)
+3. Compara importe actual vs anterior
+4. Alerta si `delta < -0.25` (caída >25%)
+
+**Campos:**
+- `valor_actual`: Delta (ej: -0.32 = -32%)
+- `valor_referencia`: -0.25
+- `descripcion_detalle`: "Caída: -32.0% ($50,000 → $34,000)"
+
+---
+
+### ALT004: Producto sin movimiento
+
+<CardGroup cols={2}>
+  <Card title="Condición" icon="box">
+    Producto activo sin ventas en 60 días
+  </Card>
+  <Card title="Severidad" icon="circle-info">
+    **Baja** 🔵
+  </Card>
+</CardGroup>
+
+**Entidad:** Producto
+
+**Acción sugerida:** "Revisar disponibilidad y push comercial"
+
+**Lógica:**
+- Recorre productos con `activo=True`
+- Busca última venta de cada producto
+- Alerta si `ultima_venta < (hoy - 60 días)`
+
+**Campos:**
+- `valor_actual`: Días sin vender
+- `valor_referencia`: 60
+- `descripcion_detalle`: "Sin ventas hace 78 días"
+
+---
+
+### ALT005: Vendedor sin actividad reciente
+
+<CardGroup cols={2}>
+  <Card title="Condición" icon="calendar-xmark">
+    Vendedor sin transacciones en los últimos 7 días hábiles
+  </Card>
+  <Card title="Severidad" icon="circle-exclamation">
+    **Media** 🟡
+  </Card>
+</CardGroup>
+
+**Entidad:** Vendedor
+
+**Acción sugerida:** "Verificar actividad de campo"
+
+**Lógica:**
+- Retrocede 7 días hábiles (lunes-viernes) desde hoy
+- Verifica última transacción de cada vendedor
+- Alerta si `ultima_actividad < fecha_7_dias_habiles`
+
+**Campos:**
+- `valor_actual`: Días desde última venta
+- `valor_referencia`: 7
+- `descripcion_detalle`: "Última venta: 2026-03-20"
+
+---
+
+### ALT006: Oportunidad: cliente B en crecimiento
+
+<CardGroup cols={2}>
+  <Card title="Condición" icon="arrow-trend-up">
+    Cliente categoría B con crecimiento >30% vs mes anterior
+  </Card>
+  <Card title="Severidad" icon="lightbulb">
+    **Info** 💡
+  </Card>
+</CardGroup>
+
+**Entidad:** Cliente
+
+**Acción sugerida:** "Potencial para upgrade a categoría A — aumentar frecuencia de visita"
+
+**Lógica:**
+1. Calcula Pareto actual
+2. Filtra clientes en categoría **B** (80-95% acumulado)
+3. Compara con período anterior
+4. Alerta si `crecimiento > 0.30`
+
+**Campos:**
+- `valor_actual`: Delta (ej: 0.42 = +42%)
+- `valor_referencia`: 0.30
+- `descripcion_detalle`: "Crecimiento: +42.0%"
+
+---
+
+### ALT007: Equipo cerca del objetivo mensual
+
+<CardGroup cols={2}>
+  <Card title="Condición" icon="bullseye">
+    Cumplimiento general >85% y quedan más de 5 días hábiles
+  </Card>
+  <Card title="Severidad" icon="lightbulb">
+    **Info** 💡
+  </Card>
+</CardGroup>
+
+**Entidad:** Equipo
+
+**Acción sugerida:** "Push final para cerrar mes en verde"
+
+**Lógica:**
+- Suma ventas totales del mes actual
+- Compara contra objetivo total del mes
+- Calcula días hábiles restantes en el mes
+- Alerta si `cumplimiento > 0.85` AND `dias_habiles_restantes > 5`
+
+**Campos:**
+- `valor_actual`: Cumplimiento (ej: 0.92)
+- `valor_referencia`: 0.85
+- `descripcion_detalle`: "Cumplimiento: 92.0% | Días hábiles restantes: 7"
+- `entidad_id`: "EQUIPO"
+- `entidad_nombre`: "Equipo Comercial"
+
+---
+
+## Funciones Helper
+
+### _crear_alerta()
+
+Constructor de diccionario de alerta.
+
+```python
+def _crear_alerta(
+    regla: dict,
+    entidad_id: str,
+    entidad_nom: str,
+    val_actual: float,
+    val_ref: float,
+    detalle: str,
+    fecha: date,
+) -> dict
+```
+
+### _get_nombre_vendedor()
+
+Extrae nombre del vendedor desde el DataFrame de ventas.
+
+```python
+def _get_nombre_vendedor(df: pd.DataFrame, vend_id: str) -> str
+```
+
+### _get_nombre_cliente()
+
+Extrae razón social del cliente.
+
+```python
+def _get_nombre_cliente(clientes_df: pd.DataFrame, cli_id: str) -> str
+```
+
+### _get_objetivo_mes()
+
+Retorna objetivos por vendedor para el mes actual.
+
+```python
+def _get_objetivo_mes(objetivos_df: pd.DataFrame, hoy: date) -> dict
+```
+
+Retorna diccionario: `{id_vendedor: objetivo_mensual}`
+
+### _retroceder_dias_habiles()
+
+Retrocede N días hábiles (lunes-viernes) desde una fecha.
+
+```python
+def _retroceder_dias_habiles(hoy: date, n: int) -> date
+```
+
+**Ejemplo:**
+```python
+hoy = date(2026, 3, 31)  # Martes
+fecha = _retroceder_dias_habiles(hoy, 7)
+# Retorna: 2026-03-20 (martes de la semana anterior)
+```
+
+### _dias_habiles_restantes_mes()
+
+Calcula días hábiles restantes en el mes actual.
+
+```python
+def _dias_habiles_restantes_mes(hoy: date) -> int
+```
+
+---
+
+## Ordenamiento de Alertas
+
+Las alertas se retornan ordenadas por severidad:
+
+1. **Alta** (🔴): Situaciones críticas que requieren acción inmediata
+2. **Media** (🟡): Situaciones de riesgo que requieren seguimiento
+3. **Baja** (🔵): Observaciones menores
+4. **Info** (💡): Oportunidades comerciales
+
+```python
+orden_sev = {"alta": 0, "media": 1, "baja": 2, "info": 3}
+```
+
+---
+
+## Ejemplo Completo
+
+```python
+from src.alerts_engine import get_alertas_activas
+from src.data_loader import get_filtered_data, load_data
+from datetime import date
+
+# Cargar datos
+data = load_data()
+ventas_marzo = get_filtered_data(
+    fecha_desde=date(2026, 3, 1),
+    fecha_hasta=date(2026, 3, 31)
+)
+ventas_febrero = get_filtered_data(
+    fecha_desde=date(2026, 2, 1),
+    fecha_hasta=date(2026, 2, 28)
+)
+
+# Ejecutar motor de alertas
+alertas = get_alertas_activas(
+    df=ventas_marzo,
+    df_anterior=ventas_febrero,
+    clientes_df=data["clientes"],
+    productos_df=data["productos"],
+    objetivos_df=data["objetivos"],
+    fecha_hasta=date(2026, 3, 31)
+)
+
+# Analizar por severidad
+print(f"Total de alertas: {len(alertas)}")
+print(f"Críticas (alta): {len(alertas[alertas['severidad'] == 'alta'])}")
+print(f"Medias: {len(alertas[alertas['severidad'] == 'media'])}")
+print(f"Oportunidades (info): {len(alertas[alertas['severidad'] == 'info'])}")
+
+# Alertas por entidad
+print("\nAlertas de vendedores:")
+vend_alerts = alertas[alertas["entidad_tipo"] == "vendedor"]
+for _, a in vend_alerts.iterrows():
+    print(f"  - {a['nombre']}: {a['entidad_nombre']}")
+    print(f"    {a['descripcion_detalle']}")
+    print(f"    Acción: {a['accion_sugerida']}")
+```
+
+---
+
+## Integración con UI
+
+En Streamlit, las alertas se visualizan con estilos por severidad:
+
+```python
+import streamlit as st
+
+def mostrar_alerta(alerta_row):
+    severity_map = {
+        "alta": "🔴",
+        "media": "🟡",
+        "baja": "🔵",
+        "info": "💡"
+    }
+    
+    icon = severity_map.get(alerta_row["severidad"], "ℹ️")
+    st.warning(f"{icon} **{alerta_row['nombre']}**")
+    st.write(f"**Entidad:** {alerta_row['entidad_nombre']}")
+    st.write(alerta_row['descripcion_detalle'])
+    st.info(f"💡 {alerta_row['accion_sugerida']}")
+
+for _, alerta in alertas.iterrows():
+    mostrar_alerta(alerta)
+```
+
+---
+
+## Configuración de Reglas
+
+Las reglas están definidas en la constante `ALERT_RULES`:
+
+```python
+ALERT_RULES = [
+    {
+        "id": "ALT001",
+        "nombre": "Vendedor bajo rendimiento crítico",
+        "condicion": "cumplimiento_pct < 0.65 en los últimos 30 días",
+        "severidad": "alta",
+        "entidad_tipo": "vendedor",
+        "accion_sugerida": "Revisar cartera y objetivos con supervisor",
+    },
+    # ... 6 reglas más
+]
+```
+
+<Note>
+  Para modificar umbrales o agregar nuevas reglas, editar `ALERT_RULES` y agregar 
+  la lógica correspondiente en `get_alertas_activas()`.
+</Note>
+
+---
+
+## Dependencias
+
+```python
+import pandas as pd
+import numpy as np
+from datetime import date, timedelta
+from src.pareto import calcular_pareto
+```
+
+## Notas de Performance
+
+<Warning>
+  El cálculo de Pareto se ejecuta múltiples veces (ALT003, ALT006). Para datasets grandes, 
+  considerar cachear el resultado del Pareto.
+</Warning>
+
+<Tip>
+  Las alertas se generan en tiempo real. Para dashboards en producción, considerar:
+  - Cachear resultados por 1 hora
+  - Pre-calcular alertas en batch nocturno
+  - Limitar evaluación a vendedores/clientes activos
+</Tip>

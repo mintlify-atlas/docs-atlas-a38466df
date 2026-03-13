@@ -1,0 +1,546 @@
+---
+title: Contributing Guidelines
+description: How to contribute to Visor KPI Comercial development
+icon: code-branch
+---
+
+## Welcome Contributors!
+
+Visor KPI Comercial is an open-source project, and we welcome contributions from the community. Whether you're fixing bugs, adding features, improving documentation, or optimizing performance, your contributions are valued.
+
+## Getting Started
+
+<Steps>
+  <Step title="Fork and Clone">
+    Fork the repository on GitHub and clone your fork locally:
+
+    ```bash
+    git clone https://github.com/YOUR_USERNAME/excel-to-kpi-dashboard.git
+    cd excel-to-kpi-dashboard
+    ```
+  </Step>
+
+  <Step title="Set Up Development Environment">
+    Follow the [Development Setup Guide](/development/setup) to configure your local environment:
+
+    ```bash
+    python -m venv .venv
+    .venv\Scripts\activate  # Windows
+    # source .venv/bin/activate  # macOS/Linux
+    
+    cd visor_kpi
+    pip install -r requirements.txt
+    python data/mock/generate_mock_data.py
+    ```
+  </Step>
+
+  <Step title="Create a Feature Branch">
+    Always create a new branch for your changes:
+
+    ```bash
+    git checkout -b feature/your-feature-name
+    ```
+
+    Branch naming conventions:
+    - `feature/` — New features or enhancements
+    - `fix/` — Bug fixes
+    - `docs/` — Documentation updates
+    - `refactor/` — Code refactoring
+    - `test/` — Test additions or improvements
+  </Step>
+
+  <Step title="Make Your Changes">
+    Implement your feature or fix following the [Code Standards](#code-standards) below.
+  </Step>
+
+  <Step title="Test Your Changes">
+    Run the full test suite to ensure nothing breaks:
+
+    ```bash
+    pytest tests/ -v
+    ```
+
+    All 51 tests must pass before submitting.
+  </Step>
+
+  <Step title="Commit Your Changes">
+    Write clear, descriptive commit messages:
+
+    ```bash
+    git add .
+    git commit -m "Add client retention prediction model"
+    ```
+
+    See [Commit Message Guidelines](#commit-message-guidelines) for best practices.
+  </Step>
+
+  <Step title="Push and Create Pull Request">
+    Push your branch to your fork:
+
+    ```bash
+    git push origin feature/your-feature-name
+    ```
+
+    Then open a Pull Request on GitHub with a detailed description of your changes.
+  </Step>
+</Steps>
+
+## Code Standards
+
+### Python Style Guide
+
+We follow [PEP 8](https://peps.python.org/pep-0008/) with some project-specific conventions:
+
+#### Naming Conventions
+
+```python
+# Functions and variables: snake_case
+def calcular_kpi_ventas(df_ventas, periodo):
+    total_ventas = df_ventas["importe_neto"].sum()
+    return total_ventas
+
+# Classes: PascalCase
+class AlertasEngine:
+    pass
+
+# Constants: UPPER_SNAKE_CASE
+THRESHOLD_CUMPLIMIENTO = 0.70
+DATA_PATH = "data/raw/mock_data.xlsx"
+```
+
+#### Docstrings
+
+Use clear docstrings for all public functions:
+
+```python
+def kpi_ventas_periodo(df, df_anterior=None):
+    """
+    Calcula KPIs de ventas para un período específico.
+    
+    Args:
+        df (pd.DataFrame): Transacciones del período actual
+        df_anterior (pd.DataFrame, optional): Transacciones del período anterior
+    
+    Returns:
+        dict: KPIs con keys 'importe_total', 'transacciones_count', etc.
+    """
+    return {
+        "importe_total": df["importe_neto"].sum(),
+        "transacciones_count": len(df),
+    }
+```
+
+#### Imports Organization
+
+```python
+# Standard library imports
+import os
+import sys
+from datetime import date
+
+# Third-party imports
+import pandas as pd
+import numpy as np
+import streamlit as st
+import plotly.express as px
+
+# Local application imports
+from config import COLORS, THRESHOLDS
+from src.kpi_engine import kpi_ventas_periodo
+```
+
+### Project Architecture Principles
+
+<CardGroup cols={2}>
+  <Card title="Separation of Concerns" icon="layer-group">
+    Keep business logic in `src/` completely independent of UI code. All functions in `src/` should work without Streamlit.
+  </Card>
+
+  <Card title="Testability" icon="flask">
+    Every function in `src/` should be testable. Avoid side effects and global state.
+  </Card>
+
+  <Card title="Single Responsibility" icon="puzzle-piece">
+    Each module and function should have one clear responsibility. `data_loader.py` loads data, `kpi_engine.py` calculates KPIs.
+  </Card>
+
+  <Card title="Reusability" icon="recycle">
+    UI components in `components/` should be generic and reusable across pages.
+  </Card>
+</CardGroup>
+
+### File Structure Guidelines
+
+#### Adding New KPIs
+
+1. **Implement the KPI function in `src/kpi_engine.py`:**
+
+```python src/kpi_engine.py
+def kpi_retencion_clientes(df, df_anterior):
+    """
+    Calcula tasa de retención de clientes entre dos períodos.
+    
+    Returns:
+        dict: {"retencion_pct": float, "clientes_retenidos": int, ...}
+    """
+    clientes_anteriores = set(df_anterior["id_cliente"].unique())
+    clientes_actuales = set(df["id_cliente"].unique())
+    retenidos = clientes_anteriores & clientes_actuales
+    
+    return {
+        "retencion_pct": len(retenidos) / len(clientes_anteriores),
+        "clientes_retenidos": len(retenidos),
+    }
+```
+
+2. **Add tests in `tests/test_kpis.py`:**
+
+```python tests/test_kpis.py
+def test_kpi_retencion_100_pct():
+    """Retención = 100% cuando todos los clientes repiten compra."""
+    df_ant = pd.DataFrame({"id_cliente": ["C001", "C002", "C003"]})
+    df_act = pd.DataFrame({"id_cliente": ["C001", "C002", "C003"]})
+    result = kpi_retencion_clientes(df_act, df_ant)
+    assert result["retencion_pct"] == 1.0
+```
+
+3. **Use in UI (e.g., `pages/1_gerencia.py`):**
+
+```python pages/1_gerencia.py
+from src.kpi_engine import kpi_retencion_clientes
+
+retencion = kpi_retencion_clientes(df_periodo, df_anterior)
+st.metric(
+    "Retención de Clientes",
+    value=fmt_pct(retencion["retencion_pct"]),
+    delta=f"{retencion['clientes_retenidos']} clientes"
+)
+```
+
+#### Adding New Alert Rules
+
+1. **Define alert logic in `src/alerts_engine.py`:**
+
+```python src/alerts_engine.py
+def _alert_margen_bajo(df, umbral=0.15):
+    """ALT005: Vendedor con margen promedio &lt;15%."""
+    alertas = []
+    por_vendedor = df.groupby("id_vendedor").agg({
+        "margen_pct": "mean",
+        "nombre_vendedor": "first"
+    })
+    
+    for vid, row in por_vendedor.iterrows():
+        if row["margen_pct"] < umbral:
+            alertas.append({
+                "id_alerta": "ALT005",
+                "nombre": "Margen por debajo del mínimo",
+                "severidad": "alta",
+                "entidad_tipo": "vendedor",
+                "entidad_id": vid,
+                "entidad_nombre": row["nombre_vendedor"],
+                "valor_actual": row["margen_pct"],
+                "valor_referencia": umbral,
+                "descripcion_detalle": f"Margen promedio: {row['margen_pct']:.1%}",
+                "accion_sugerida": "Revisar estructura de precios y descuentos",
+            })
+    
+    return pd.DataFrame(alertas)
+```
+
+2. **Add to main alert function:**
+
+```python src/alerts_engine.py
+def get_alertas_activas(df, df_anterior, clientes_df, productos_df, objetivos_df):
+    alertas_list = [
+        _alert_bajo_cumplimiento(df, objetivos_df),
+        _alert_clientes_inactivos(df, clientes_df),
+        _alert_margen_bajo(df),  # ← New alert
+        # ...
+    ]
+    return pd.concat([a for a in alertas_list if not a.empty], ignore_index=True)
+```
+
+3. **Add tests in `tests/test_alerts.py`:**
+
+```python tests/test_alerts.py
+def test_alt005_se_dispara_margen_bajo():
+    """ALT005 fires when sales rep has &lt;15% average margin."""
+    df = pd.DataFrame([{
+        "id_vendedor": "V001",
+        "nombre_vendedor": "Juan García",
+        "margen_pct": 0.10,  # 10% < 15%
+        "importe_neto": 50_000,
+    }])
+    result = get_alertas_activas(df, None, clientes, productos, objetivos)
+    alt005 = result[result["id_alerta"] == "ALT005"]
+    assert len(alt005) >= 1
+```
+
+#### Adding New Pages
+
+1. **Create file in `pages/` with numeric prefix:**
+
+```python pages/6_predicciones.py
+import streamlit as st
+import pandas as pd
+from src.data_loader import cargar_datos
+from config import COLORS
+
+st.set_page_config(page_title="Predicciones", page_icon="🔮", layout="wide")
+
+st.title("🔮 Predicciones de Ventas")
+
+# Load data
+data = cargar_datos()
+df = data["ventas"]
+
+# Your prediction logic here
+st.write("Modelo de predicción próximamente...")
+```
+
+2. **The page will automatically appear in Streamlit's sidebar navigation.**
+
+## Testing Requirements
+
+### Test Coverage Expectations
+
+<Note>
+  All new features must include tests. PRs without tests will not be merged.
+</Note>
+
+#### For New Functions in `src/`
+
+- At least 3 tests per function:
+  1. **Happy path** — normal expected usage
+  2. **Edge case** — empty input, nulls, extreme values
+  3. **Validation** — output structure and types
+
+#### For Bug Fixes
+
+- Add a regression test that would have caught the bug
+- Ensure the test fails before the fix and passes after
+
+#### Example Test Structure
+
+```python
+def test_nueva_funcion_caso_normal():
+    """Test with typical input data."""
+    result = nueva_funcion(df)
+    assert result is not None
+
+def test_nueva_funcion_df_vacio():
+    """Test with empty DataFrame."""
+    df_empty = pd.DataFrame()
+    result = nueva_funcion(df_empty)
+    assert len(result) == 0
+
+def test_nueva_funcion_estructura_output():
+    """Test output has expected structure."""
+    result = nueva_funcion(df)
+    assert "columna_esperada" in result.columns
+    assert result["columna_esperada"].dtype == float
+```
+
+## Commit Message Guidelines
+
+### Format
+
+```
+<type>: <subject>
+
+<body (optional)>
+
+<footer (optional)>
+```
+
+### Types
+
+- **feat**: New feature
+- **fix**: Bug fix
+- **docs**: Documentation changes
+- **style**: Formatting, missing semicolons, etc. (no code change)
+- **refactor**: Code restructuring without changing functionality
+- **test**: Adding or updating tests
+- **chore**: Build process or auxiliary tool changes
+
+### Examples
+
+<CodeGroup>
+  ```
+  feat: add client retention prediction model
+  
+  Implements a machine learning model to predict client churn
+  risk based on purchase frequency and recency metrics.
+  
+  Closes #42
+  ```
+
+  ```
+  fix: correct Pareto category assignment for category B
+  
+  Previously, clients between 80-95% cumulative volume were
+  incorrectly labeled as category A. Now correctly assigned
+  to category B.
+  
+  Fixes #38
+  ```
+
+  ```
+  docs: update installation instructions for macOS
+  
+  Added troubleshooting section for M1/M2 chip compatibility
+  with NumPy installation.
+  ```
+
+  ```
+  test: add coverage for ALT003 product sales drop alert
+  
+  Adds unit tests for the scenario where a product experiences
+  >30% MoM sales decline.
+  ```
+</CodeGroup>
+
+## Pull Request Process
+
+### PR Description Template
+
+When creating a PR, use this template:
+
+```markdown
+## Description
+Brief description of what this PR does.
+
+## Type of Change
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Documentation update
+
+## Testing
+- [ ] All existing tests pass (`pytest tests/ -v`)
+- [ ] Added new tests for this change
+- [ ] Manual testing completed
+
+## Screenshots (if applicable)
+Add screenshots for UI changes.
+
+## Checklist
+- [ ] Code follows project style guidelines
+- [ ] Self-review completed
+- [ ] Comments added for complex logic
+- [ ] Documentation updated
+- [ ] No new warnings generated
+
+## Related Issues
+Closes #issue_number
+```
+
+### Review Process
+
+1. **Automated Checks**: GitHub Actions will run the test suite automatically
+2. **Code Review**: Maintainers will review your code for:
+   - Correctness and functionality
+   - Code quality and style
+   - Test coverage
+   - Documentation completeness
+3. **Feedback**: Address any review comments
+4. **Approval**: Once approved, a maintainer will merge your PR
+
+## Code of Conduct
+
+### Our Standards
+
+<CardGroup cols={2}>
+  <Card title="Be Respectful" icon="handshake">
+    Treat all contributors with respect. Disagreements are fine, but stay professional.
+  </Card>
+
+  <Card title="Constructive Feedback" icon="comments">
+    Provide helpful, actionable feedback in code reviews. Focus on the code, not the person.
+  </Card>
+
+  <Card title="Collaborative" icon="users">
+    We're building this together. Ask questions, share knowledge, help others.
+  </Card>
+
+  <Card title="Quality First" icon="star">
+    Prioritize code quality, testing, and documentation. Rushed code helps no one.
+  </Card>
+</CardGroup>
+
+## Development Resources
+
+### Useful Links
+
+- [Streamlit Documentation](https://docs.streamlit.io/)
+- [Pandas Documentation](https://pandas.pydata.org/docs/)
+- [Plotly Python Documentation](https://plotly.com/python/)
+- [pytest Documentation](https://docs.pytest.org/)
+
+### Project-Specific Resources
+
+- [Project README](https://github.com/ricardobing/excel-to-kpi-dashboard)
+- [Issue Tracker](https://github.com/ricardobing/excel-to-kpi-dashboard/issues)
+- [Live Demo](https://excel-to-kpi-dashboard.streamlit.app/)
+
+## Getting Help
+
+<AccordionGroup>
+  <Accordion title="I found a bug, what should I do?">
+    1. Check if the issue already exists in the [Issue Tracker](https://github.com/ricardobing/excel-to-kpi-dashboard/issues)
+    2. If not, create a new issue with:
+       - Clear description of the bug
+       - Steps to reproduce
+       - Expected vs actual behavior
+       - Your environment (OS, Python version)
+       - Error messages or screenshots
+  </Accordion>
+
+  <Accordion title="I have a feature idea">
+    1. Check existing issues to see if someone else suggested it
+    2. Open a new issue with the `enhancement` label
+    3. Describe:
+       - The problem this feature would solve
+       - Your proposed solution
+       - Any alternative solutions you considered
+       - Additional context or mockups
+  </Accordion>
+
+  <Accordion title="I need help with my contribution">
+    Feel free to:
+    - Comment on the relevant issue or PR
+    - Ask questions in your PR description
+    - Tag maintainers if you need specific help
+    
+    Don't be afraid to ask! We're here to help.
+  </Accordion>
+
+  <Accordion title="My tests are failing locally">
+    Common issues:
+    1. **Mock data not generated**: Run `python data/mock/generate_mock_data.py`
+    2. **Wrong directory**: Make sure you're in `visor_kpi/` when running pytest
+    3. **Dependencies outdated**: Try `pip install -r requirements.txt --upgrade`
+    4. **Virtual environment**: Ensure your venv is activated
+  </Accordion>
+</AccordionGroup>
+
+## Recognition
+
+Contributors will be:
+- Listed in the project's README
+- Credited in release notes for their specific contributions
+- Acknowledged in the documentation
+
+Thank you for contributing to Visor KPI Comercial! Your efforts help make sales intelligence accessible to distribution companies everywhere. 🚀
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Development Setup" icon="wrench" href="/development/setup">
+    Set up your local development environment
+  </Card>
+  <Card title="Testing Guide" icon="flask" href="/development/testing">
+    Learn about the automated test suite
+  </Card>
+</CardGroup>

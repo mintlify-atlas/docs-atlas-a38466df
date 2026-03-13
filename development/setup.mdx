@@ -1,0 +1,269 @@
+---
+title: Development Environment Setup
+description: Set up your local development environment for Visor KPI Comercial
+icon: wrench
+---
+
+## Overview
+
+Visor KPI Comercial is a Python-based sales intelligence dashboard built with Streamlit. This guide will help you set up your development environment from scratch.
+
+## Prerequisites
+
+<Note>
+  **Python Version Required**: 3.10 or higher (3.10–3.12 recommended)
+</Note>
+
+Before you begin, ensure you have:
+
+- Python 3.10+ installed on your system
+- Git (for cloning the repository)
+- A terminal or command-line interface
+
+## Quick Start
+
+<Steps>
+  <Step title="Clone the Repository">
+    ```bash
+    git clone https://github.com/ricardobing/excel-to-kpi-dashboard.git
+    cd excel-to-kpi-dashboard
+    ```
+  </Step>
+
+  <Step title="Create Virtual Environment">
+    Create an isolated Python environment to manage dependencies:
+
+    <CodeGroup>
+      ```bash Windows
+      python -m venv .venv
+      .venv\Scripts\activate
+      ```
+
+      ```bash macOS/Linux
+      python -m venv .venv
+      source .venv/bin/activate
+      ```
+    </CodeGroup>
+
+    <Note>
+      Once activated, your terminal prompt should show `(.venv)` at the beginning.
+    </Note>
+  </Step>
+
+  <Step title="Install Dependencies">
+    Navigate to the application directory and install all required packages:
+
+    ```bash
+    cd visor_kpi
+    pip install -r requirements.txt
+    ```
+
+    This will install all core dependencies including:
+    - **Streamlit** (1.32+) — Web application framework
+    - **Pandas** (2.2+) — Data manipulation and analysis
+    - **Plotly** (5.19+) — Interactive visualizations
+    - **NumPy** (1.26+) — Numerical computing
+    - **openpyxl** (3.1.5+) — Excel file handling
+    - **Faker** (23.2+) — Mock data generation
+    - **pytest** (8.0+) — Testing framework
+  </Step>
+
+  <Step title="Generate Mock Data">
+    The application requires an Excel file with sales data. Generate the mock dataset:
+
+    ```bash
+    python data/mock/generate_mock_data.py
+    ```
+
+    This creates `data/raw/mock_data.xlsx` with:
+    - **27 months** of historical data (Jan 2023 – Mar 2026)
+    - **12 sales representatives** with different performance profiles
+    - **180 clients** across 4 commercial channels
+    - **60 products** in 5 categories
+    - **~30,000 transaction records**
+
+    <Note>
+      The mock data generator uses `Faker` with Argentine locale (`es_AR`) to create realistic business names and addresses.
+    </Note>
+  </Step>
+
+  <Step title="Launch the Application">
+    Start the Streamlit development server:
+
+    ```bash
+    streamlit run app.py
+    ```
+
+    The dashboard will open automatically in your browser at `http://localhost:8501`
+  </Step>
+</Steps>
+
+## Project Structure
+
+Understanding the codebase architecture:
+
+```
+visor_kpi/
+├── app.py                     # Main entry point (Executive Summary)
+├── config.py                  # Global configuration, colors, thresholds
+├── requirements.txt           # Python dependencies
+│
+├── pages/                     # Multi-page Streamlit views
+│   ├── 1_gerencia.py          # Management consolidated view
+│   ├── 2_vendedores.py        # Individual sales rep dashboards
+│   ├── 3_clientes.py          # Customer portfolio analysis
+│   ├── 4_productos.py         # Product performance rankings
+│   └── 5_alertas.py           # Alerts and opportunities hub
+│
+├── src/                       # Business logic layer (UI-agnostic)
+│   ├── data_loader.py         # ETL: Excel ingestion and validation
+│   ├── kpi_engine.py          # KPI calculation engine
+│   ├── pareto.py              # 80/20 analysis and A/B/C classification
+│   ├── alerts_engine.py       # Alert rules (ALT001–ALT007)
+│   └── reports.py             # Exportable report generation
+│
+├── components/                # Reusable UI components
+│   ├── kpi_card.py            # KPI cards with traffic light indicators
+│   ├── charts.py              # Plotly chart templates
+│   ├── filters.py             # Sidebar filters with session_state
+│   └── rankings.py            # Styled ranking tables
+│
+├── assets/
+│   └── style.css              # Custom dark theme CSS
+│
+├── data/
+│   ├── mock/
+│   │   └── generate_mock_data.py   # Mock data generator script
+│   └── raw/
+│       └── mock_data.xlsx          # Generated Excel file
+│
+└── tests/
+    ├── test_mock_data.py       # Dataset validation tests
+    ├── test_kpis.py            # KPI engine unit tests
+    └── test_alerts.py          # Alert engine tests
+```
+
+### Architecture Principles
+
+<CardGroup cols={2}>
+  <Card title="Separation of Concerns" icon="layer-group">
+    Business logic in `src/` is completely independent of the UI layer, making it 100% testable and reusable.
+  </Card>
+  <Card title="Component Reusability" icon="puzzle-piece">
+    UI elements in `components/` can be imported and used across any page in the application.
+  </Card>
+</CardGroup>
+
+## Configuration
+
+The `config.py` file centralizes all application settings:
+
+### Color Palette
+
+```python config.py
+COLORS = {
+    "primary":        "#1B3A6B",
+    "accent":         "#00C49F",
+    "success":        "#00C49F",  # Green (traffic light)
+    "warning":        "#FFB347",  # Orange
+    "danger":         "#E84855",  # Red
+    "bg_dark":        "#0F1923",  # Main background
+    "bg_card":        "#1A2535",  # Card background
+    "text_primary":   "#F0F4F8",
+    "text_secondary": "#8899AA",
+}
+```
+
+### Business Thresholds
+
+```python config.py
+THRESHOLDS = {
+    "cumplimiento_ok":      1.00,   # 100% → Green
+    "cumplimiento_warning": 0.80,   # 80%  → Orange
+    "caida_critica":       -0.20,   # -20% vs previous period = alert
+    "crecimiento_notable":  0.15,   # +15% growth = highlight
+    "pareto_acumulado":     0.80,   # 80% volume = Category A clients
+    "pareto_B":             0.95,   # 80-95% = B, >95% = C
+}
+```
+
+### Data Path
+
+```python config.py
+BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(BASE_DIR, "data", "raw", "mock_data.xlsx")
+```
+
+<Note>
+  To use real production data, simply replace `mock_data.xlsx` with your actual sales Excel file (maintaining the same sheet structure).
+</Note>
+
+## Development Workflow
+
+### Hot Reload
+
+Streamlit automatically reloads when you save changes to any Python file. You'll see a "Source file changed" notification in the browser.
+
+### Debugging
+
+Use `st.write()` for quick debugging:
+
+```python
+import streamlit as st
+
+# Display any Python object
+st.write(dataframe)
+st.write({"key": "value"})
+st.write("Debug message")
+```
+
+### Browser DevTools
+
+Streamlit apps are standard web applications. Use your browser's developer tools (F12) to inspect HTML, CSS, and network requests.
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="ModuleNotFoundError: No module named 'streamlit'">
+    Make sure your virtual environment is activated and dependencies are installed:
+    ```bash
+    .venv\Scripts\activate  # Windows
+    source .venv/bin/activate  # macOS/Linux
+    pip install -r requirements.txt
+    ```
+  </Accordion>
+
+  <Accordion title="FileNotFoundError: mock_data.xlsx not found">
+    Generate the mock data file first:
+    ```bash
+    python data/mock/generate_mock_data.py
+    ```
+    Verify the file exists at `data/raw/mock_data.xlsx`
+  </Accordion>
+
+  <Accordion title="Port 8501 already in use">
+    Another Streamlit instance is running. Either stop it or use a different port:
+    ```bash
+    streamlit run app.py --server.port 8502
+    ```
+  </Accordion>
+
+  <Accordion title="Python version too old">
+    Check your Python version:
+    ```bash
+    python --version
+    ```
+    If it's below 3.10, install a newer version from [python.org](https://python.org)
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Run Tests" icon="flask" href="/development/testing">
+    Learn how to run the automated test suite
+  </Card>
+  <Card title="Contributing" icon="code-branch" href="/development/contributing">
+    Guidelines for contributing code and documentation
+  </Card>
+</CardGroup>

@@ -1,0 +1,238 @@
+---
+title: Importing Excel Data
+description: Learn how to import and manage your commercial data in Visor KPI
+icon: 'file-import'
+---
+
+## Overview
+
+Visor KPI Comercial uses an Excel-based data structure to power all dashboards and analytics. The system automatically loads and caches data from a single Excel workbook containing five essential sheets.
+
+<Note>
+Data is cached for 1 hour (3600 seconds) to optimize performance. The system will automatically refresh data after this period.
+</Note>
+
+## Excel File Structure
+
+The data file is located at the path defined in your `config.py` as `DATA_PATH`. The Excel workbook must contain the following sheets:
+
+<AccordionGroup>
+  <Accordion title="Ventas (Sales)" icon="dollar-sign">
+    **Required Columns:**
+    - `fecha` - Transaction date (will be converted to datetime)
+    - `importe_neto` - Net amount (numeric)
+    - `importe_bruto` - Gross amount (numeric)
+    - `cantidad` - Quantity sold (numeric)
+    - `precio_unitario` - Unit price (numeric)
+    - `descuento_pct` - Discount percentage (numeric)
+    - `id_vendedor` - Salesperson ID (for joining)
+    - `id_cliente` - Customer ID (for joining)
+    - `id_producto` - Product ID (for joining)
+    - `id_venta` - Unique transaction ID
+
+    **Auto-Generated Fields:**
+    - `año` - Year extracted from fecha
+    - `mes` - Month extracted from fecha
+    - `periodo` - Period in 'YYYY-MM' format
+    - `margen_neto` - Calculated net margin
+    - `margen_pct` - Margin percentage
+  </Accordion>
+
+  <Accordion title="Vendedores (Salespeople)" icon="user-tie">
+    **Required Columns:**
+    - `id_vendedor` - Unique salesperson ID
+    - `nombre_completo` - Full name
+    - `zona` - Sales zone/territory
+    - `perfil` - Profile/role (e.g., Senior, Junior)
+    - `objetivo_mensual_base` - Monthly base target (numeric)
+    - `antiguedad_años` - Years of seniority (numeric)
+    - `activo` - Active status (boolean: TRUE/FALSE)
+  </Accordion>
+
+  <Accordion title="Clientes (Customers)" icon="building">
+    **Required Columns:**
+    - `id_cliente` - Unique customer ID
+    - `razon_social` - Company legal name
+    - `canal` - Sales channel (e.g., Retail, Wholesale, E-commerce)
+    - `zona` - Geographic zone
+    - `fecha_alta` - Registration date (datetime)
+    - `id_vendedor_asignado` - Assigned salesperson ID
+    - `objetivo_mensual_cliente` - Monthly customer target (numeric)
+    - `activo` - Active status (boolean)
+  </Accordion>
+
+  <Accordion title="Productos (Products)" icon="box">
+    **Required Columns:**
+    - `id_producto` - Unique product ID
+    - `descripcion` - Product description/name
+    - `categoria` - Product category
+    - `precio_unitario` - Catalog unit price (numeric)
+    - `costo_unitario` - Unit cost (numeric)
+    - `activo` - Active status (boolean)
+  </Accordion>
+
+  <Accordion title="Objetivos (Targets)" icon="bullseye">
+    **Required Columns:**
+    - `id_vendedor` - Salesperson ID
+    - `objetivo` - Target amount (numeric)
+    - `periodo` - Target period date (datetime)
+    - `año` - Year (numeric)
+    - `mes` - Month (numeric)
+
+    <Tip>
+    If your sheet doesn't have a `periodo` column, the system will automatically create it from `año` and `mes` columns.
+    </Tip>
+  </Accordion>
+</AccordionGroup>
+
+## Data Loading Process
+
+<Steps>
+  <Step title="Data File Check">
+    The system checks if the data file exists at the configured `DATA_PATH`. If not found, you'll see an error:
+    
+    ```
+    No se encontró el archivo de datos: [path]
+    Ejecutá primero: python data/mock/generate_mock_data.py
+    ```
+  </Step>
+
+  <Step title="Excel Parsing">
+    Each sheet is parsed using `pandas.ExcelFile.parse()` with automatic type detection.
+  </Step>
+
+  <Step title="Data Type Conversion">
+    - Date fields are converted to `datetime` format
+    - Numeric fields are coerced with `pd.to_numeric()` (errors filled with 0)
+    - Boolean fields are converted to `bool` type
+  </Step>
+
+  <Step title="Master DataFrame Creation">
+    A master dataset is created by joining all tables:
+    - Ventas ⟷ Vendedores (on `id_vendedor`)
+    - Ventas ⟷ Clientes (on `id_cliente`)
+    - Ventas ⟷ Productos (on `id_producto`)
+    
+    This master dataframe includes calculated fields like margin.
+  </Step>
+
+  <Step title="Caching">
+    Data is cached in memory for 1 hour to improve performance across the application.
+  </Step>
+</Steps>
+
+## Generating Mock Data
+
+If you're starting fresh or testing the system, generate mock data using:
+
+```bash
+python data/mock/generate_mock_data.py
+```
+
+This script creates a realistic sample dataset with:
+- Multiple salespeople across different zones
+- Diverse customer base with various channels
+- Product catalog with categories
+- Historical sales transactions
+- Monthly targets
+
+## Data Validation
+
+### Automatic Validations
+
+The system performs these validations automatically:
+
+1. **Missing Values**: Numeric fields with errors are filled with `0`
+2. **Date Parsing**: Invalid dates will raise an error during load
+3. **Join Integrity**: Left joins are used, so orphaned records will have `NaN` in joined fields
+
+### Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Consistent IDs" icon="key">
+    Ensure all ID fields (`id_vendedor`, `id_cliente`, `id_producto`) are consistent across sheets to enable proper joins.
+  </Card>
+
+  <Card title="Date Formats" icon="calendar">
+    Use consistent date formats (YYYY-MM-DD or Excel date format) for all date columns.
+  </Card>
+
+  <Card title="Numeric Precision" icon="calculator">
+    Use sufficient decimal precision for monetary values to avoid rounding errors.
+  </Card>
+
+  <Card title="Active Records" icon="check-circle">
+    Keep the `activo` field updated to exclude inactive entities from default views.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="File Not Found Error" icon="exclamation-triangle">
+    **Problem**: The application can't locate the data file.
+    
+    **Solution**:
+    1. Check that the file exists at the path defined in `config.py`
+    2. Verify file permissions are readable
+    3. Generate mock data if needed: `python data/mock/generate_mock_data.py`
+  </Accordion>
+
+  <Accordion title="Date Parsing Errors" icon="calendar-xmark">
+    **Problem**: Errors when converting date columns.
+    
+    **Solution**:
+    1. Ensure all date cells contain valid dates
+    2. Remove any text or special characters from date columns
+    3. Use Excel's date format (not text that looks like a date)
+  </Accordion>
+
+  <Accordion title="Missing Data in Dashboards" icon="table">
+    **Problem**: Charts show no data or unexpected gaps.
+    
+    **Solution**:
+    1. Check that ID fields match across sheets (case-sensitive)
+    2. Verify the date range covers your data
+    3. Ensure `activo` flags are set correctly
+    4. Check filter selections in the sidebar
+  </Accordion>
+
+  <Accordion title="Performance Issues" icon="gauge-high">
+    **Problem**: Dashboard loads slowly.
+    
+    **Solution**:
+    1. Data is cached for 1 hour - wait for cache to build
+    2. Reduce the dataset size if working with millions of rows
+    3. Consider filtering to specific date ranges
+    4. Restart the Streamlit app to clear and rebuild cache
+  </Accordion>
+</AccordionGroup>
+
+## Data Update Frequency
+
+<Note>
+**Cache Duration**: 1 hour (3600 seconds)
+
+The `@st.cache_data` decorator caches the loaded data for optimal performance. After 1 hour, the system will automatically reload from the Excel file on the next access.
+</Note>
+
+To force a cache refresh:
+1. Update your Excel file
+2. Restart the Streamlit application, or
+3. Wait for the 1-hour cache TTL to expire
+
+## Technical Reference
+
+### Source Code Location
+
+The data loading logic is implemented in:
+- `visor_kpi/src/data_loader.py:24-85` - Main loading function
+- `visor_kpi/src/data_loader.py:89-124` - Master DataFrame creation
+- `visor_kpi/src/data_loader.py:131-162` - Filtering functions
+
+### Key Functions
+
+- `load_data()` - Returns dict with all DataFrames
+- `get_master_df()` - Returns joined master dataset
+- `get_filtered_data()` - Applies user filters
+- `check_data_available()` - Validates file existence

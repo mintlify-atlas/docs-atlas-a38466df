@@ -1,0 +1,542 @@
+---
+title: 'Alerts Center'
+description: 'Proactive business intelligence with automated alerts and opportunity detection'
+icon: 'bell'
+---
+
+## Overview
+
+The **Alerts Center** (Centro de Alertas y Oportunidades) is Visor KPI's proactive intelligence engine. Instead of manually searching for problems or opportunities, this view surfaces critical issues and growth potential automatically using 7 predefined business rules.
+
+<Info>
+  **Who uses this view**: Sales managers, commercial directors, and team leaders who need to stay ahead of issues before they impact results.
+</Info>
+
+## Why Alerts Matter
+
+<CardGroup cols={2}>
+  <Card title="Reactive Management" icon="fire" color="#E84855">
+    **Traditional approach**: Discover a major client stopped buying when you review last month's numbers—30+ days after the problem started.
+  </Card>
+  
+  <Card title="Proactive Management" icon="shield-check" color="#00C49F">
+    **With Alerts Center**: Get notified when a key account reaches 30 days without purchase, allowing immediate intervention before they're lost.
+  </Card>
+</CardGroup>
+
+The difference between these approaches can mean **thousands in saved revenue** and **protected client relationships**.
+
+## Alert Severity Levels
+
+All alerts are classified by urgency and business impact:
+
+<CardGroup cols={2}>
+  <Card title="🔴 Critical" icon="circle-exclamation" color="#E84855">
+    **Immediate action required**
+    - Revenue-threatening issues
+    - Major client risks
+    - Team performance crises
+    - Response time: Same day
+  </Card>
+  
+  <Card title="🟡 Medium Priority" icon="triangle-exclamation" color="#FFB347">
+    **Important but not urgent**
+    - Developing problems
+    - Early warning signals
+    - Portfolio risks
+    - Response time: This week
+  </Card>
+  
+  <Card title="🔵 Low Priority" icon="info-circle" color="#6C9EE5">
+    **Awareness items**
+    - Minor issues
+    - Product movement gaps
+    - Process improvements
+    - Response time: This month
+  </Card>
+  
+  <Card title="🟢 Opportunities" icon="lightbulb" color="#00C49F">
+    **Growth potential**
+    - Upsell possibilities
+    - Momentum indicators
+    - Strategic wins
+    - Response time: When capacity allows
+  </Card>
+</CardGroup>
+
+## Alert Dashboard Summary
+
+At the top of the Alerts Center, you'll see a summary panel with alert counts:
+
+```
+┌────────────┬────────────┬────────────┬────────────┬────────────┐
+│     5      │     12     │     3      │     7      │     27     │
+│ 🔴 Critical│ 🟡 Medium  │ 🔵 Low     │ 🟢 Opport. │   Total    │
+└────────────┴────────────┴────────────┴────────────┴────────────┘
+```
+
+<Tip>
+  Start your day by checking this summary. If you see critical alerts, those become your top priority for the day.
+</Tip>
+
+## The 7 Alert Rules
+
+Visor KPI evaluates these business rules automatically:
+
+### ALT001: Seller Critical Underperformance
+
+<Warning>
+  **Trigger**: Seller with quota attainment < 65% in the last 30 days
+  
+  **Severity**: 🔴 Critical
+  
+  **Impact**: A seller this far below target is unlikely to recover without intervention
+</Warning>
+
+**What the alert shows**:
+- Seller name and ID
+- Current attainment percentage
+- Gap to target
+- Days remaining in period
+
+**Suggested actions**:
+- Review portfolio and objectives with supervisor
+- Identify specific barriers (training, territory, resources)
+- Create performance improvement plan
+- Daily check-ins for remainder of month
+- Consider territory reassignment if chronic
+
+**Example**: 
+```
+🔴 [ALT001] · CRITICAL
+Seller Critical Underperformance
+Juan Pérez (North Zone) — 58% quota attainment (threshold: 65%)
+💡 Review portfolio and objectives with supervisor
+```
+
+---
+
+### ALT002: Client Inactivity Risk
+
+<Warning>
+  **Trigger**: Active client without purchases in the last 45 days
+  
+  **Severity**: 🟡 Medium
+  
+  **Impact**: Risk of permanent client loss, churn prevention opportunity
+</Warning>
+
+**What the alert shows**:
+- Client name and ID
+- Days since last purchase
+- Historical purchase frequency
+- Previous revenue contribution
+
+**Suggested actions**:
+- Urgent reactivation contact
+- Understand reason for inactivity
+- Offer special promotion or incentive
+- Schedule in-person visit if high-value account
+
+**Example**:
+```
+🟡 [ALT002] · MEDIUM
+Client Inactivity Risk
+Supermercado ABC — No purchases for 52 days
+💡 Urgent reactivation contact
+```
+
+---
+
+### ALT003: Key Account Revenue Drop
+
+<Warning>
+  **Trigger**: Category A client with sales decline > 25% vs previous month
+  
+  **Severity**: 🔴 Critical
+  
+  **Impact**: Your most valuable clients are buying significantly less
+</Warning>
+
+**What the alert shows**:
+- Client name and Pareto classification
+- % decline in purchases
+- Dollar amounts (previous vs current)
+- Trend direction
+
+**Suggested actions**:
+- Key account visit required
+- Investigate root cause (competitive pressure, service issues, budget cuts)
+- Prepare retention proposal
+- Escalate to senior management if needed
+
+**Example**:
+```
+🔴 [ALT003] · CRITICAL  
+Key Account Revenue Drop
+Distribuidora XYZ (Category A) — Down 32% ($85K → $58K)
+💡 Key account visit required
+```
+
+---
+
+### ALT004: Product Without Movement
+
+<Info>
+  **Trigger**: Active product without sales in 60 days
+  
+  **Severity**: 🔵 Low
+  
+  **Impact**: Inventory carrying costs, potential obsolescence
+</Info>
+
+**What the alert shows**:
+- Product name and SKU code
+- Days without sales
+- Category
+- Last sale date
+
+**Suggested actions**:
+- Review availability and stock levels
+- Commercial push campaign
+- Training for sales team
+- Consider promotional pricing
+- Evaluate discontinuation if chronic
+
+**Example**:
+```
+🔵 [ALT004] · LOW
+Product Without Movement  
+Product XYZ (Beverages) — 73 days without sales
+💡 Review availability and push commercial
+```
+
+---
+
+### ALT005: Seller Inactivity
+
+<Warning>
+  **Trigger**: Seller without transactions in the last 7 business days
+  
+  **Severity**: 🟡 Medium
+  
+  **Impact**: Lost selling time, potential territory neglect
+</Warning>
+
+**What the alert shows**:
+- Seller name
+- Days since last activity
+- Last transaction date
+- Assigned territory
+
+**Suggested actions**:
+- Verify field activity immediately
+- Check for illness, vacation, or administrative issues
+- Review daily call reports
+- Assess if support needed
+
+**Example**:
+```
+🟡 [ALT005] · MEDIUM
+Seller Inactivity
+María González — No transactions in 9 business days
+💡 Verify field activity
+```
+
+---
+
+### ALT006: Growth Opportunity (Category B Client)
+
+<Info>
+  **Trigger**: Category B client with growth > 30% vs previous month
+  
+  **Severity**: 🟢 Opportunity
+  
+  **Impact**: Potential to upgrade to Category A (high-value client)
+</Info>
+
+**What the alert shows**:
+- Client name and current category
+- Growth percentage
+- Revenue increase
+- Purchase frequency change
+
+**Suggested actions**:
+- Upgrade to Category A status with increased visit frequency
+- Offer volume discounts to lock in growth
+- Expand product mix
+- Assign senior account manager
+
+**Example**:
+```
+🟢 [ALT006] · OPPORTUNITY
+Growth Opportunity
+Minimarket Del Sur (Category B) — +42% growth  
+💡 Potential for upgrade to Category A — increase visit frequency
+```
+
+---
+
+### ALT007: Team Near Target (Push Opportunity)
+
+<Info>
+  **Trigger**: Team cumulative attainment > 85% with 5+ business days remaining in month
+  
+  **Severity**: 🟢 Opportunity
+  
+  **Impact**: High probability of exceeding target with focused effort
+</Info>
+
+**What the alert shows**:
+- Team attainment percentage
+- Days remaining in period
+- Gap to 100% target
+- Required daily average to exceed
+
+**Suggested actions**:
+- Final push campaign for month close
+- Daily performance meetings
+- Small incentives for target achievement
+- Focus on quick wins and closing pending deals
+
+**Example**:
+```
+🟢 [ALT007] · OPPORTUNITY
+Team Near Target
+Commercial Team — 91% attainment | 7 business days remaining
+💡 Final push for month close in green
+```
+
+## Alert Filtering
+
+Use the filter controls to focus your attention:
+
+### By Severity
+Select one or more:
+- 🔴 Critical
+- 🟡 Medium  
+- 🔵 Low
+- 🟢 Opportunity
+
+### By Entity Type
+- Seller alerts
+- Client alerts
+- Product alerts
+- Team alerts
+
+### By Status
+- ✅ **Hide reviewed**: Only show unreviewed alerts
+- **Show all**: Include previously addressed items
+
+<Tip>
+  Create a daily routine: Filter to Critical + Medium, then work through each unreviewed alert systematically.
+</Tip>
+
+## Alert Management
+
+### Mark as Reviewed
+
+Each alert card has an action button:
+
+**✅ Mark as Reviewed**: Indicates you've seen and addressed this alert
+
+**Why mark reviewed?**
+- Prevents re-reviewing same alerts
+- Tracks what's been handled vs what's pending
+- Keeps your alert queue clean and actionable
+
+<Note>
+  Reviewed status persists only for your current session. On next login, new alerts will appear based on current data conditions.
+</Note>
+
+### Alert Detail Cards
+
+Each alert displays:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ 🔴 [ALT001] · CRITICAL                                  │
+│                                                           │
+│ Seller Critical Underperformance                         │
+│ Juan Pérez (North Zone) — 58% attainment (threshold 65%)│
+│                                                           │
+│ 💡 Review portfolio and objectives with supervisor       │
+│                                                           │
+│ [✅ Mark as Reviewed]                                    │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Card components**:
+1. **Severity icon** and **Alert ID**
+2. **Alert name** (what's wrong)
+3. **Entity affected** and **specific details**
+4. **Suggested action** (what to do about it)
+5. **Action button** to mark reviewed
+
+## Daily Alert Workflow
+
+### Morning Routine (10 minutes)
+
+**Every morning before planning your day**:
+
+1. **Open Alerts Center**
+2. **Check summary counts**
+   - Any critical alerts?
+   - How many medium priority?
+3. **Filter to Critical**
+4. **Review each critical alert**
+5. **Add critical items to today's task list**
+6. **Mark alerts as reviewed** as you address them
+
+### Weekly Planning (30 minutes)
+
+**Every Monday**:
+
+1. **Review all Medium priority alerts**
+2. **Categorize by theme**:
+   - Client issues
+   - Seller performance  
+   - Product problems
+3. **Assign to appropriate team members**
+4. **Set deadlines for resolution**
+5. **Schedule follow-up review for Friday**
+
+### Monthly Review (1 hour)
+
+**End of each month**:
+
+1. **Export all alerts from past 30 days**
+2. **Analyze patterns**:
+   - Which alerts recur?
+   - Which sellers/clients/products appear most?
+   - Are we improving or declining?
+3. **Update processes** to prevent recurring issues
+4. **Adjust thresholds** if too many false positives
+5. **Share insights** with leadership team
+
+## Alert Prioritization Matrix
+
+When overwhelmed with alerts, use this priority framework:
+
+| Severity | Entity | Response Time | Owner |
+|----------|--------|---------------|-------|
+| 🔴 Critical | Category A Client | **Same day** | Sales Manager |
+| 🔴 Critical | Any Seller | **Same day** | Commercial Director |
+| 🟡 Medium | Category A Client | **This week** | Account Manager |
+| 🟡 Medium | Category B Client | **This week** | Seller |
+| 🟡 Medium | Any Seller | **This week** | Sales Manager |
+| 🔵 Low | Any Product | **This month** | Product Manager |
+| 🟢 Opportunity | Any | **When capacity allows** | Sales Team |
+
+<Warning>
+  Never ignore Critical alerts. These represent immediate revenue risk or major operational issues.
+</Warning>
+
+## Alert Effectiveness Metrics
+
+Track how well you're responding to alerts:
+
+### Response Rate
+```
+(Alerts Marked Reviewed / Total Alerts Generated) × 100
+Target: > 90%
+```
+
+### Average Response Time
+```
+Average days from alert generation to review
+Target: < 2 days for Critical, < 7 days for Medium
+```
+
+### Resolution Rate
+```
+(Alerts that don't recur / Total Alerts) × 100
+Target: > 75%
+```
+
+<Note>
+  If the same alert keeps appearing for the same entity, you're treating symptoms not causes. Dig deeper to resolve root issues.
+</Note>
+
+## Customization Options
+
+### Threshold Adjustment
+
+While the 7 alert rules are preconfigured, thresholds can be adjusted in `config.py` if needed:
+
+- ALT001: Default 65% → Adjust for your market
+- ALT002: Default 45 days → Adjust for purchase cycles
+- ALT003: Default -25% → Adjust for volatility
+- ALT006: Default +30% → Adjust for growth expectations
+
+<Tip>
+  Start with defaults for 3 months, then adjust based on false positive rates. Aim for a signal-to-noise ratio where 80%+ of alerts require actual action.
+</Tip>
+
+## Integration with Other Views
+
+Alerts are designed to drive action in other views:
+
+<CardGroup cols={2}>
+  <Card title="Client Alert → Client Analysis" icon="arrow-right">
+    When you see ALT002 (client inactivity), click through to Client Analysis to see full history and create reactivation plan
+  </Card>
+  
+  <Card title="Seller Alert → Management View" icon="arrow-right">
+    When you see ALT001 (seller underperformance), jump to Management View to see full team context and ranking
+  </Card>
+  
+  <Card title="Product Alert → Product Analysis" icon="arrow-right">
+    When you see ALT004 (product stagnant), open Product Analysis to review category performance and inventory
+  </Card>
+  
+  <Card title="Opportunity → Sales Team View" icon="arrow-right">
+    When you see ALT006 (growth opportunity), assign to seller via Sales Team View with specific action plan
+  </Card>
+</CardGroup>
+
+## Alert Notification (Future)
+
+<Info>
+  **Coming soon**: Automatic alert delivery via:
+  - WhatsApp notifications for critical alerts
+  - Email digest of daily/weekly alerts
+  - Telegram bot integration
+  - SMS for urgent issues
+</Info>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Don't Ignore" icon="eye">
+    Never dismiss alerts without investigation. Each represents a real business condition.
+  </Card>
+  
+  <Card title="Act Fast" icon="bolt">
+    Critical alerts lose value over time. A 48-hour-old client risk alert is much harder to resolve.
+  </Card>
+  
+  <Card title="Root Cause" icon="magnifying-glass">
+    If the same alert recurs, you're not solving the underlying problem. Dig deeper.
+  </Card>
+  
+  <Card title="Celebrate Wins" icon="trophy">
+    Opportunity alerts are just as important as problems. Act on them to accelerate growth.
+  </Card>
+</CardGroup>
+
+## Related Views
+
+<CardGroup cols={3}>
+  <Card title="Executive Summary" icon="chart-line" href="/features/executive-summary">
+    See top 4 critical alerts
+  </Card>
+  
+  <Card title="Management View" icon="users-gear" href="/features/management-view">
+    Seller performance context
+  </Card>
+  
+  <Card title="Client Analysis" icon="users" href="/features/client-analysis">
+    Client risk deep dive
+  </Card>
+</CardGroup>

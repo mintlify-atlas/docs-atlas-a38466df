@@ -1,0 +1,208 @@
+---
+title: 'Performance Thresholds'
+description: 'Configure performance semaphore rules, alert triggers, and Pareto analysis thresholds'
+---
+
+## Overview
+
+Performance thresholds control how the system evaluates sales performance, triggers alerts, and categorizes customers. All thresholds are defined in the `THRESHOLDS` dictionary in `config.py`.
+
+## Semaphore Thresholds
+
+The semaphore system provides visual performance indicators throughout the application using color coding:
+
+<ParamField path="cumplimiento_ok" type="float" default="1.00">
+  **Green Zone** - Performance at or above 100% of objective
+  
+  Salespeople achieving this threshold are displayed with green indicators (🟢) and the success color (#00C49F).
+</ParamField>
+
+<ParamField path="cumplimiento_warning" type="float" default="0.80">
+  **Orange Zone** - Performance between 80% and 99% of objective
+  
+  Salespeople in this range are displayed with orange indicators (🟡) and the warning color (#FFB347). This signals that performance is acceptable but below target.
+</ParamField>
+
+<Note>
+**Red Zone** - Performance below 80% of objective
+
+Any performance below `cumplimiento_warning` (0.80) automatically falls into the danger zone, displayed with red indicators (🔴) and the danger color (#E84855).
+</Note>
+
+### Semaphore Functions
+
+The configuration provides helper functions to evaluate performance:
+
+```python
+from config import get_color_semaforo, get_label_semaforo, get_emoji_semaforo
+
+# Get hex color for performance level
+color = get_color_semaforo(0.95)  # Returns: "#FFB347" (warning)
+
+# Get label for conditional logic
+label = get_label_semaforo(1.05)  # Returns: "success"
+
+# Get emoji for display
+emoji = get_emoji_semaforo(0.75)  # Returns: "🔴"
+```
+
+### Example: Performance Evaluation
+
+```python
+cumplimiento = ventas_realizadas / objetivo_mensual
+
+if cumplimiento >= THRESHOLDS["cumplimiento_ok"]:
+    # Green - Excellent performance
+    color = COLORS["success"]
+    mensaje = "¡Objetivo alcanzado!"
+elif cumplimiento >= THRESHOLDS["cumplimiento_warning"]:
+    # Orange - Needs improvement
+    color = COLORS["warning"]
+    mensaje = "Cerca del objetivo"
+else:
+    # Red - Critical attention needed
+    color = COLORS["danger"]
+    mensaje = "Requiere atención inmediata"
+```
+
+## Variance Alert Thresholds
+
+These thresholds trigger automatic alerts based on performance changes compared to the previous period:
+
+<ParamField path="caida_critica" type="float" default="-0.20">
+  **Critical Drop Alert** - Triggers when sales drop 20% or more
+  
+  When a salesperson's performance drops by 20% or more compared to the previous period, the system generates an alert requiring immediate supervisor attention.
+  
+  ```python
+  variacion = (ventas_actual - ventas_anterior) / ventas_anterior
+  if variacion <= THRESHOLDS["caida_critica"]:
+      generar_alerta("Caída crítica en ventas", prioridad="alta")
+  ```
+</ParamField>
+
+<ParamField path="crecimiento_notable" type="float" default="0.15">
+  **Notable Growth Highlight** - Highlights exceptional performance of +15% or more
+  
+  When a salesperson achieves 15% or more growth compared to the previous period, they are highlighted in reports and dashboards as top performers.
+  
+  ```python
+  variacion = (ventas_actual - ventas_anterior) / ventas_anterior
+  if variacion >= THRESHOLDS["crecimiento_notable"]:
+      destacar_vendedor("Alto crecimiento", categoria="top_performer")
+  ```
+</ParamField>
+
+## Pareto Analysis Thresholds
+
+Pareto thresholds categorize customers into A, B, and C segments based on cumulative revenue contribution:
+
+<ParamField path="pareto_acumulado" type="float" default="0.80">
+  **Category A Customers** - Top customers representing 80% of revenue
+  
+  Customers are sorted by revenue in descending order. The customers whose cumulative revenue reaches 80% of the total are classified as Category A - your most valuable customers requiring VIP treatment.
+</ParamField>
+
+<ParamField path="pareto_B" type="float" default="0.95">
+  **Category B Customers** - Mid-tier customers representing 80-95% cumulative revenue
+  
+  After Category A customers, those whose cumulative contribution falls between 80% and 95% are classified as Category B - important customers with growth potential.
+</ParamField>
+
+<Note>
+**Category C Customers** - Remaining customers above 95% cumulative revenue
+
+Any customers beyond the 95% threshold are automatically classified as Category C - lower-value customers suitable for automated or reduced-touch sales processes.
+</Note>
+
+### Pareto Classification Example
+
+```python
+import pandas as pd
+from config import THRESHOLDS
+
+# Sort customers by revenue (descending)
+df_clientes = df.groupby('id_cliente')['importe_neto'].sum().reset_index()
+df_clientes = df_clientes.sort_values('importe_neto', ascending=False)
+
+# Calculate cumulative percentage
+total_revenue = df_clientes['importe_neto'].sum()
+df_clientes['cumulative_pct'] = df_clientes['importe_neto'].cumsum() / total_revenue
+
+# Classify customers
+def classify_pareto(cumulative_pct):
+    if cumulative_pct <= THRESHOLDS["pareto_acumulado"]:
+        return "A"
+    elif cumulative_pct <= THRESHOLDS["pareto_B"]:
+        return "B"
+    else:
+        return "C"
+
+df_clientes['categoria'] = df_clientes['cumulative_pct'].apply(classify_pareto)
+```
+
+## Customizing Thresholds
+
+To modify thresholds, edit the `THRESHOLDS` dictionary in `config.py`:
+
+```python
+THRESHOLDS = {
+    # Increase green threshold to require 105% performance
+    "cumplimiento_ok":      1.05,   # 105% → verde
+    
+    # Tighten warning threshold to 85%
+    "cumplimiento_warning": 0.85,   # 85%  → naranja
+    
+    # Make critical drop more sensitive (-15%)
+    "caida_critica":       -0.15,
+    
+    # Raise growth highlight threshold to 20%
+    "crecimiento_notable":  0.20,
+    
+    # Adjust Pareto to 70/90 rule instead of 80/95
+    "pareto_acumulado":     0.70,
+    "pareto_B":             0.90,
+}
+```
+
+<Warning>
+**Impact of Threshold Changes**
+
+Changing thresholds affects:
+- Visual indicators across all dashboards
+- Alert generation frequency and sensitivity
+- Customer segmentation and categorization
+- Report filtering and rankings
+
+Test thoroughly before deploying threshold changes to production.
+</Warning>
+
+## Threshold Usage Across Modules
+
+Thresholds are used throughout the application:
+
+### KPI Engine (`kpi_engine.py`)
+- Calculates cumplimiento (achievement) against objectives
+- Applies semaphore colors to performance metrics
+- Compares current vs previous period performance
+
+### Alerts Engine (`alerts_engine.py`)
+- Triggers alerts for critical drops
+- Highlights notable growth performers
+- Monitors team progress toward objectives
+
+### Pareto Analysis (`pareto.py`)
+- Segments customers into A/B/C categories
+- Prioritizes customer attention and resources
+- Identifies concentration risks
+
+### UI Components (`components/`)
+- Colors KPI cards based on thresholds
+- Displays semaphore indicators
+- Formats delta values with appropriate styling
+
+## See Also
+
+- [Global Settings](/configuration/settings) - Colors, constants, and formatting
+- [Custom Objectives](/configuration/custom-objectives) - Setting sales targets
+- [Alerts Reference](/technical/components/alerts-engine) - Alert system configuration

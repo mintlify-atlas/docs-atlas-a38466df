@@ -1,0 +1,252 @@
+---
+title: 'Global Settings'
+description: 'Configure colors, business constants, and formatting functions for Visor KPI Comercial'
+---
+
+## Overview
+
+All global configuration for Visor KPI Comercial is centralized in `config.py`. This file defines colors, business constants, formatting functions, data paths, and Plotly theme settings.
+
+## Color Palette
+
+The application uses a carefully designed color scheme defined in the `COLORS` dictionary:
+
+### Primary Colors
+
+<ParamField path="primary" type="string" default="#1B3A6B">
+  Main brand color used for headers and primary UI elements
+</ParamField>
+
+<ParamField path="primary_light" type="string" default="#2E5FA3">
+  Lighter variant for hover states and accents
+</ParamField>
+
+<ParamField path="accent" type="string" default="#00C49F">
+  Accent color for highlights and success states
+</ParamField>
+
+### Performance Semaphore Colors
+
+<ParamField path="success" type="string" default="#00C49F">
+  Green - indicates performance at or above 100% of objective
+</ParamField>
+
+<ParamField path="warning" type="string" default="#FFB347">
+  Orange - indicates performance between 80-99% of objective
+</ParamField>
+
+<ParamField path="danger" type="string" default="#E84855">
+  Red - indicates performance below 80% of objective
+</ParamField>
+
+### Neutral Colors
+
+<ParamField path="bg_dark" type="string" default="#0F1923">
+  Dark background for main application layout
+</ParamField>
+
+<ParamField path="bg_card" type="string" default="#1A2535">
+  Background color for cards and containers
+</ParamField>
+
+<ParamField path="bg_card_hover" type="string" default="#243044">
+  Hover state for interactive cards
+</ParamField>
+
+<ParamField path="text_primary" type="string" default="#F0F4F8">
+  Primary text color for high contrast readability
+</ParamField>
+
+<ParamField path="text_secondary" type="string" default="#8899AA">
+  Secondary text color for labels and metadata
+</ParamField>
+
+<ParamField path="border" type="string" default="#2D3F55">
+  Border color for dividers and containers
+</ParamField>
+
+### Chart Color Sequence
+
+```python
+"chart_seq": [
+    "#2E5FA3", "#00C49F", "#FFB347",
+    "#E84855", "#9B59B6", "#3498DB",
+    "#1ABC9C", "#F39C12"
+]
+```
+
+Used for multi-series charts to ensure visual distinction between different data series.
+
+## Business Constants
+
+### Geographic Zones
+
+```python
+ZONAS = ["GBA Norte", "GBA Sur", "Interior"]
+```
+
+Defines the sales territories for the organization.
+
+### Sales Channels
+
+```python
+CANALES = [
+    "Canal Tradicional",
+    "Supermercadismo",
+    "Mayorista",
+    "HoReCa"
+]
+```
+
+Defines the distribution channels used in the business.
+
+### Company Information
+
+<ParamField path="EMPRESA.nombre" type="string" default="Distribuidora Del Sur S.A.">
+  Company name displayed in reports
+</ParamField>
+
+<ParamField path="EMPRESA.periodo_inicio" type="date" default="2023-01-01">
+  Start date of the tracking period
+</ParamField>
+
+<ParamField path="EMPRESA.periodo_fin" type="date" default="2026-03-31">
+  End date of the tracking period
+</ParamField>
+
+## Formatting Functions
+
+The configuration includes several utility functions for consistent number formatting:
+
+### Currency Formatting
+
+```python
+fmt_moneda(1284500)
+# Returns: "$1.284.500"
+```
+
+Formats numbers as Argentine peso currency with thousands separators (dots) and no decimals for values >= 1000.
+
+### Percentage Formatting
+
+```python
+fmt_pct(0.842, decimales=1)
+# Returns: "84.2%"
+```
+
+Formats decimal values as percentages with configurable decimal places.
+
+### Number Formatting
+
+```python
+fmt_numero(1284500)
+# Returns: "1.284.500"
+```
+
+Formats numbers with thousands separators using dots.
+
+### Delta Formatting
+
+```python
+fmt_delta(0.082)
+# Returns: "▲ +8.2%"
+
+fmt_delta(-0.031)
+# Returns: "▼ -3.1%"
+```
+
+Formats variance with directional arrows. Values between -0.05% and +0.05% display as "— 0.0%".
+
+### HTML Delta Formatting
+
+```python
+fmt_delta_html(0.082)
+# Returns: '<span style="color:#00C49F">▲ +8.2%</span>'
+```
+
+Similar to `fmt_delta` but includes inline HTML color styling:
+- Positive: green (#00C49F)
+- Negative: red (#E84855)
+- Neutral: gray (#8899AA)
+
+## Data Paths
+
+<ParamField path="BASE_DIR" type="string">
+  Absolute path to the config.py directory
+</ParamField>
+
+<ParamField path="DATA_PATH" type="string" default="data/raw/mock_data.xlsx">
+  Relative path to the Excel data file from BASE_DIR
+</ParamField>
+
+## Plotly Theme
+
+Custom Plotly theme settings for consistent chart styling:
+
+```python
+PLOTLY_THEME = {
+    "paper_bgcolor": COLORS["bg_card"],
+    "plot_bgcolor":  COLORS["bg_card"],
+    "font": {
+        "color": COLORS["text_primary"],
+        "family": "Inter, sans-serif",
+        "size": 12
+    },
+    "margin": dict(l=20, r=20, t=40, b=20)
+}
+```
+
+Apply this theme to Plotly figures for consistent appearance across all charts.
+
+## Date Period Utilities
+
+The configuration provides helper functions for working with date periods:
+
+### Available Periods
+
+```python
+get_periodos()
+# Returns dict with predefined periods:
+# {
+#     "Este mes": (first_day_of_month, today),
+#     "Mes anterior": (first_day_last_month, last_day_last_month),
+#     "Último trimestre": (3_months_ago, today),
+#     "Este año": (jan_1, today),
+#     "Año anterior": (jan_1_last_year, dec_31_last_year),
+#     "Personalizado": None
+# }
+```
+
+### Previous Period Calculation
+
+```python
+get_periodo_anterior(fecha_desde, fecha_hasta)
+# Returns tuple with equivalent previous period dates
+```
+
+Calculates a comparison period of the same duration immediately preceding the given date range.
+
+## Example Configuration
+
+Here's how to use the configuration in your modules:
+
+```python
+from config import COLORS, THRESHOLDS, fmt_moneda, fmt_pct
+
+# Use colors
+header_color = COLORS["primary"]
+success_color = COLORS["success"]
+
+# Format values
+revenue_display = fmt_moneda(1250000)  # "$1.250.000"
+achievement = fmt_pct(0.95)            # "95.0%"
+
+# Check thresholds
+if performance >= THRESHOLDS["cumplimiento_ok"]:
+    status_color = COLORS["success"]
+```
+
+## See Also
+
+- [Performance Thresholds](/configuration/thresholds) - Semaphore rules and alert thresholds
+- [Custom Objectives](/configuration/custom-objectives) - Setting sales targets

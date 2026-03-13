@@ -1,80 +1,444 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start
+description: Get a working Visor KPI dashboard running in under 5 minutes
 ---
 
-## Get started in three steps
+## Get Started in 5 Minutes
 
-Get your documentation site running locally and make your first customization.
-
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+This guide will get you from zero to a fully functional sales intelligence dashboard with realistic data.
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  **Prerequisites**: Python 3.10-3.12 installed on your system. Check with `python --version`
+</Note>
+
+## Installation Steps
+
+<Steps>
+  <Step title="Clone the Repository">
+    Get the source code from GitHub:
+
+    ```bash
+    git clone https://github.com/ricardobing/excel-to-kpi-dashboard.git
+    cd excel-to-kpi-dashboard
+    ```
+
+    <Note>
+      The repository contains all source code, tests, and documentation needed to run the dashboard.
+    </Note>
+  </Step>
+
+  <Step title="Create Virtual Environment">
+    Set up an isolated Python environment:
+
+    <CodeGroup>
+      ```bash Windows
+      python -m venv .venv
+      .venv\Scripts\activate
+      ```
+
+      ```bash macOS/Linux
+      python -m venv .venv
+      source .venv/bin/activate
+      ```
+    </CodeGroup>
+
+    <Warning>
+      Always activate your virtual environment before running commands. Your terminal prompt should show `(.venv)` when active.
+    </Warning>
+  </Step>
+
+  <Step title="Install Dependencies">
+    Install all required Python packages:
+
+    ```bash
+    pip install -r visor_kpi/requirements.txt
+    ```
+
+    This installs:
+    - **streamlit** (1.32+) - Web application framework
+    - **pandas** (2.2+) - Data manipulation and analysis
+    - **plotly** (5.19+) - Interactive visualizations
+    - **openpyxl** (3.1.5+) - Excel file reading
+    - **numpy** (1.26+) - Numerical computations
+    - **faker** (23.2+) - Mock data generation
+    - **pytest** (8.0+) - Testing framework
+
+    <Note>
+      Installation typically takes 1-2 minutes depending on your internet connection.
+    </Note>
+  </Step>
+
+  <Step title="Generate Mock Data">
+    Navigate to the application directory and generate sample sales data:
+
+    ```bash
+    cd visor_kpi
+    python data/mock/generate_mock_data.py
+    ```
+
+    This script generates:
+    - **12 salespeople** with differentiated performance profiles (star, stable, development, problematic)
+    - **180 customers** across 4 commercial channels (Traditional, Supermarkets, Wholesale, HoReCa)
+    - **60 products** in 5 categories (Dairy, Grocery, Beverages, Cleaning, Personal Care)
+    - **~30,000 transactions** spanning 27 months (Jan 2023 – Mar 2026)
+    - **Monthly objectives** per salesperson with 5% annual growth
+
+    The data is saved to `data/raw/mock_data.xlsx` with 5 sheets: Ventas, Vendedores, Clientes, Productos, and Objetivos.
+
+    <Card icon="clock">
+      **Generation Time**: 30-60 seconds for complete dataset with validation
+    </Card>
+  </Step>
+
+  <Step title="Launch the Dashboard">
+    Start the Streamlit application:
+
+    ```bash
+    streamlit run app.py
+    ```
+
+    The dashboard will automatically open in your browser at `http://localhost:8501`
+
+    <Note>
+      If the browser doesn't open automatically, copy the URL from the terminal output.
+    </Note>
+  </Step>
+</Steps>
+
+## What You'll See
+
+After launching, you'll land on the **Executive Summary** page with:
+
+### Top KPI Cards
+
+Four key performance indicators with trend arrows:
+
+```python
+# Example: Rendering KPI cards from app.py
+render_kpi_card(
+    label        = "Ventas del Período",
+    value        = fmt_moneda(kv["importe_total"]),
+    delta_pct    = kv.get("importe_vs_anterior"),
+    objetivo     = fmt_moneda(kv.get("objetivo_total", 0)),
+    cumplimiento = kv.get("cumplimiento_pct"),
+    icon         = "💰",
+)
+```
+
+<CardGroup cols={2}>
+  <Card title="Period Sales" icon="dollar-sign">
+    Total revenue with comparison to previous period and target fulfillment percentage
+  </Card>
+  <Card title="Team Fulfillment" icon="bullseye">
+    Overall team performance against monthly quotas with traffic light indicator
+  </Card>
+  <Card title="Gross Margin" icon="chart-line">
+    Total profitability with period-over-period variation
+  </Card>
+  <Card title="Customer Coverage" icon="users">
+    Percentage of active customers vs total assigned portfolio
+  </Card>
+</CardGroup>
+
+### Interactive Charts
+
+<Tabs>
+  <Tab title="Sales Evolution">
+    Line chart showing monthly sales trends with objectives overlay:
+    - **Blue line**: Actual sales by month
+    - **Red dashed line**: Monthly objectives
+    - **Hover**: Detailed values and fulfillment percentage
+  </Tab>
+  <Tab title="Fulfillment Gauge">
+    Real-time gauge displaying team performance:
+    - **Green zone** (100%+): Target exceeded
+    - **Yellow zone** (80-99%): Warning threshold
+    - **Red zone** (&lt;80%): Critical performance
+  </Tab>
+  <Tab title="Channel Distribution">
+    Donut chart breaking down sales by commercial channel:
+    - Canal Tradicional
+    - Supermercadismo
+    - Mayorista
+    - HoReCa
+  </Tab>
+</Tabs>
+
+### Top Rankings
+
+Three ranking tables displayed side-by-side:
+
+<CodeGroup>
+  ```python Top Sellers
+  # From src/kpi_engine.py
+  kv_df = kpi_por_vendedor(
+      df, 
+      objetivos_df, 
+      df_ant, 
+      fecha_desde, 
+      fecha_hasta
+  )
+  # Returns DataFrame with:
+  # - nombre_vendedor
+  # - importe_total
+  # - cumplimiento_pct
+  # - label_semaforo (success/warning/danger)
+  ```
+
+  ```python Top Customers
+  # From src/kpi_engine.py
+  kcli = kpi_clientes(
+      df, 
+      clientes_df, 
+      df_ant, 
+      fecha_hasta
+  )
+  # Returns DataFrame with:
+  # - razon_social
+  # - importe_total
+  # - categoria_pareto (A/B/C)
+  # - flag_en_riesgo
+  ```
+
+  ```python Top Products
+  # From src/kpi_engine.py
+  kp_df = kpi_productos(df, df_ant)
+  # Returns DataFrame with:
+  # - descripcion
+  # - categoria
+  # - importe_total
+  # - variacion_vs_anterior
+  ```
+</CodeGroup>
+
+### Active Alerts
+
+If performance issues are detected, you'll see alerts like:
+
+<Warning>
+  **ALT001: Seller with fulfillment < 70%**
+  
+  **Patricia Elena Vargas** — Cumplimiento del 58% en el último período
+  
+  💡 **Action**: Schedule performance review and identify support needs
+</Warning>
+
+<Note>
+  **ALT007: Opportunity detected**
+  
+  **Supermercado El Sol S.A.** — High purchase frequency (4 orders/month) with low average ticket ($45,000)
+  
+  💡 **Action**: Propose volume discount packages to increase ticket size
+</Note>
+
+## Exploring the Dashboard
+
+Use the **sidebar** to navigate between views:
+
+<Steps>
+  <Step title="🏠 Resumen Ejecutivo">
+    High-level KPIs for executives and managers
+  </Step>
+  <Step title="📋 Vista Gerencial">
+    Detailed team performance comparison and trends
+  </Step>
+  <Step title="👤 Vista por Vendedor">
+    Individual salesperson dashboards with portfolio details
+  </Step>
+  <Step title="🧑‍🤝‍🧑 Análisis de Clientes">
+    Customer segmentation, Pareto analysis, and risk identification
+  </Step>
+  <Step title="📦 Análisis de Productos">
+    Product performance, category mix, and rotation analysis
+  </Step>
+  <Step title="🚨 Centro de Alertas">
+    All active alerts with severity classification and suggested actions
+  </Step>
+</Steps>
+
+## Using Filters
+
+All views support dynamic filtering through the sidebar:
+
+<Card icon="filter">
+  **Available Filters**:
+  - **Date Range**: Custom period or presets (This month, Last quarter, This year, etc.)
+  - **Sellers**: Single or multiple salesperson selection
+  - **Zones**: GBA Norte, GBA Sur, Interior
+  - **Channels**: Canal Tradicional, Supermercadismo, Mayorista, HoReCa
+</Card>
+
+Example filter usage from the codebase:
+
+```python
+# From src/data_loader.py
+df = get_filtered_data(
+    fecha_desde    = date(2026, 1, 1),
+    fecha_hasta    = date(2026, 3, 31),
+    vendedores_sel = ["V001", "V002"],  # Filter to specific sellers
+    zonas_sel      = ["GBA Norte"],     # Filter to zone
+    canales_sel    = None               # No channel filter (all channels)
+)
+```
+
+## Understanding the Data
+
+The mock dataset simulates a real distribution company:
+
+### Salesperson Profiles
+
+The 12 salespeople have differentiated performance patterns:
+
+<Tabs>
+  <Tab title="⭐ Star (3)">
+    - Consistently exceed quotas (110-130%)
+    - High base objectives ($2-2.2M/month)
+    - Stable upward trend
+    - Examples: Martín Gómez, Laura Fernández, Diego Ramírez
+  </Tab>
+  <Tab title="📊 Stable (4)">
+    - Meet quotas consistently (90-105%)
+    - Medium base objectives ($1.3-1.8M/month)
+    - Steady performance
+    - Examples: Ana Rodríguez, Carlos López
+  </Tab>
+  <Tab title="📈 Development (3)">
+    - Growing performance (70-90%)
+    - Lower base objectives ($0.9-1.1M/month)
+    - Strong improvement trend (+0.5% monthly)
+    - Examples: Valeria Torres, Lucas Ruiz
+  </Tab>
+  <Tab title="⚠️ Problematic (2)">
+    - Below quota (&lt;70%)
+    - High variability (SD=15%)
+    - No improvement trend
+    - Examples: Sebastián García, Patricia Vargas (inactive)
+  </Tab>
+</Tabs>
+
+### Customer Distribution
+
+180 customers across 4 commercial channels:
+
+| Channel | Count | Monthly Objective Range | Purchase Frequency |
+|---------|-------|------------------------|--------------------|
+| **Canal Tradicional** | 90 | $50K - $300K | 1-2 orders/month |
+| **Supermercadismo** | 36 | $200K - $800K | 3-4 orders/month |
+| **Mayorista** | 27 | $150K - $600K | 2-3 orders/month |
+| **HoReCa** | 27 | $50K - $250K | 1-2 orders/month |
+
+<Note>
+  15% of customers (27) are marked as inactive and have no purchases in the last 3-18 months, simulating churn.
+</Note>
+
+### Product Catalog
+
+60 products across 5 categories:
+
+```python
+# From data/mock/generate_mock_data.py
+PRODUCTOS_CATALOGO = [
+    # (descripcion, categoria, precio, unidad)
+    ("Leche Entera Sachet 1L",     "Lácteos",    950,  "unidad"),
+    ("Aceite Girasol 1.5L",        "Almacén",    3200, "unidad"),
+    ("Gaseosa Cola 2.25L",         "Bebidas",    1450, "unidad"),
+    ("Detergente Vajilla 500ml",   "Limpieza",   1350, "unidad"),
+    ("Shampoo 400ml",              "Perfumería", 3200, "unidad"),
+    # ... 55 more products
+]
+```
+
+20% of products (12) are marked as low-rotation and appear less frequently in transactions.
+
+## Running Tests
+
+Verify the data integrity and KPI calculations:
+
+```bash
+pytest tests/ -v
+```
+
+Expected output:
+
+```
+tests/test_mock_data.py::test_vendedores_count PASSED
+tests/test_mock_data.py::test_clientes_count PASSED
+tests/test_mock_data.py::test_productos_count PASSED
+tests/test_mock_data.py::test_transacciones_volumen PASSED
+tests/test_kpis.py::test_kpi_ventas_periodo PASSED
+tests/test_kpis.py::test_kpi_margen PASSED
+tests/test_alerts.py::test_alerta_cumplimiento PASSED
+# ... 51 tests total
+
+==================== 51 passed in 3.42s ====================
+```
+
+<Card icon="check-circle">
+  The test suite validates:
+  - Mock dataset consistency and referential integrity
+  - KPI engine output structure and calculated values
+  - Pareto analysis scale and A/B/C assignments
+  - Alert engine triggering logic for all 7 rules (ALT001-ALT007)
+</Card>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Customize Configuration" icon="gear" href="/installation#configuration">
+    Learn how to adjust thresholds, colors, and business rules in `config.py`
+  </Card>
+  <Card title="Connect Your Data" icon="database" href="/installation#data-sources">
+    Replace mock data with your own Excel sales file
+  </Card>
+  <Card title="Development Guide" icon="code" href="/development/setup">
+    Set up your development environment
+  </Card>
+  <Card title="Configuration" icon="gear" href="/configuration/settings">
+    Customize thresholds, colors, and business rules
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Dashboard shows 'No data available' error">
+    Make sure you generated the mock data:
+
+    ```bash
+    cd visor_kpi
+    python data/mock/generate_mock_data.py
+    ```
+
+    Verify the file exists at `visor_kpi/data/raw/mock_data.xlsx`
+  </Accordion>
+
+  <Accordion title="ModuleNotFoundError when running the app">
+    Ensure your virtual environment is activated and dependencies are installed:
+
+    ```bash
+    # Windows
+    .venv\Scripts\activate
+    # macOS/Linux
+    source .venv/bin/activate
+
+    pip install -r visor_kpi/requirements.txt
+    ```
+  </Accordion>
+
+  <Accordion title="Charts not displaying correctly">
+    This is usually a browser compatibility issue. Try:
+    - Refreshing the page (Ctrl+F5 or Cmd+Shift+R)
+    - Clearing browser cache
+    - Using a different browser (Chrome or Firefox recommended)
+  </Accordion>
+
+  <Accordion title="Slow performance with filters">
+    The first load caches data with Streamlit's `@st.cache_data` decorator. Subsequent filter changes should be instant. If it remains slow:
+    - Check your dataset size (should be ~30K rows)
+    - Clear Streamlit cache: Press 'C' in the terminal where the app is running
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  **Need Help?** Check the [GitHub Issues](https://github.com/ricardobing/excel-to-kpi-dashboard/issues) or review the full [Installation Guide](/installation) for more details.
 </Note>

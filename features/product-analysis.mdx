@@ -1,0 +1,478 @@
+---
+title: 'Product Analysis'
+description: 'SKU performance tracking, category insights, and inventory optimization tools'
+icon: 'box-open'
+---
+
+## Overview
+
+The **Product Analysis** view provides comprehensive insights into your product portfolio performance. From category-level trends to individual SKU analysis, this dashboard helps identify bestsellers, slow movers, and growth opportunities across your catalog.
+
+<Info>
+  **Who uses this view**: Product managers, commercial analysts, category managers, and sales leaders responsible for portfolio optimization and inventory planning.
+</Info>
+
+## Product Portfolio Dashboard
+
+Four key metrics summarize your product performance:
+
+<CardGroup cols={2}>
+  <Card title="Active SKUs" icon="boxes-stacked">
+    Number of products in catalog:
+    - Total SKUs available for sale
+    - Active vs discontinued items
+    - Portfolio breadth indicator
+  </Card>
+  
+  <Card title="Product Categories" icon="tags">
+    Number of distinct categories:
+    - Portfolio organization structure
+    - Diversification measure
+    - Category coverage
+  </Card>
+  
+  <Card title="Stagnant Products (60d)" icon="circle-exclamation">
+    SKUs without sales:
+    - Products with zero sales in 60+ days
+    - Inventory risk indicator
+    - ⚠️ Red if count > 0
+    - Requires action
+  </Card>
+  
+  <Card title="Average Sales per SKU" icon="chart-line">
+    Mean revenue per product:
+    - Total sales / number of active SKUs
+    - Portfolio efficiency metric
+    - Helps set minimum performance thresholds
+  </Card>
+</CardGroup>
+
+<Warning>
+  High "Stagnant Products" count indicates potential inventory issues, obsolete items, or gaps in sales team product knowledge. Investigate immediately.
+</Warning>
+
+## Visual Analytics
+
+### Product Treemap
+
+The **Product Treemap by Category** provides a visual representation of your portfolio:
+
+**How to read it**:
+- Each rectangle = one product
+- Rectangle size = sales volume (bigger = more revenue)
+- Rectangle color = product category
+- Nested structure = category grouping
+
+**Insights at a glance**:
+- Which categories dominate your sales
+- Which individual products are standouts
+- Where you have category concentration
+- Visual gaps showing underperforming categories
+
+<Tip>
+  Hover over any rectangle to see exact product name, category, and sales value. Click to drill into category details.
+</Tip>
+
+### Product Pareto Chart
+
+The **Product Pareto Analysis** applies the 80/20 rule to your SKU portfolio:
+
+**Chart components**:
+- **Bars**: Individual product sales (top 30 shown, sorted DESC)
+- **Line**: Cumulative percentage of total revenue
+- **80% marker**: Shows which products generate 80% of sales
+
+**What this tells you**:
+
+<CardGroup cols={2}>
+  <Card title="Category A Products" icon="star" color="#00C49F">
+    Products before the 80% line:
+    - Your revenue drivers (typically 20% of SKUs)
+    - Never allow stockouts
+    - Focus promotions here
+    - Train all sellers on these items
+  </Card>
+  
+  <Card title="Category B Products" icon="chart-simple" color="#FFB347">
+    Products from 80% to 95%:
+    - Supporting cast (typically 30% of SKUs)
+    - Maintain adequate stock
+    - Occasional promotions
+    - Standard training coverage
+  </Card>
+  
+  <Card title="Category C Products" icon="boxes-stacked" color="#6C9EE5">
+    Products after 95% line:
+    - Long tail (typically 50% of SKUs)
+    - Consider discontinuation candidates
+    - Minimal inventory investment
+    - Made-to-order if possible
+  </Card>
+</CardGroup>
+
+<Note>
+  If your 80% line occurs at fewer than 10-15 products, you have dangerous product concentration. Diversification should be a strategic priority.
+</Note>
+
+## Category Filtering
+
+The **Filter by Category** selector allows focusing analysis:
+
+**Available filters** (examples):
+- Beverages
+- Snacks
+- Dairy Products
+- Cleaning Supplies
+- Personal Care
+- _(Categories vary by your business)_
+
+**Use cases**:
+- Category manager reviews specific portfolio
+- Compare performance across categories
+- Identify category-specific trends
+- Prepare category business reviews
+
+<Tip>
+  Select multiple categories to compare performance across related product lines.
+</Tip>
+
+## Complete Product Ranking
+
+The **Product Ranking Table** shows detailed performance for every SKU:
+
+### Table Columns
+
+| Column | Description | Insight |
+|--------|-------------|----------|
+| **Rank** | Position by sales volume | Performance ordering |
+| **SKU Code** | Product identifier | Inventory reference |
+| **Description** | Product name | Human-readable name |
+| **Category** | Product classification | Portfolio grouping |
+| **Units Sold** | Quantity sold | Volume metric |
+| **Revenue** | Sales value | Dollar contribution |
+| **Pareto** | A/B/C classification | Priority indicator |
+| **vs Previous** | % change from prior period | Trend direction |
+| **Transactions** | Number of sales | Breadth of adoption |
+
+### Sortable Analysis
+
+<CardGroup cols={2}>
+  <Card title="By Revenue (DESC)" icon="arrow-down-wide-short">
+    Identify top sellers and revenue champions
+  </Card>
+  
+  <Card title="By Units (DESC)" icon="box">
+    Find highest-volume products (may differ from revenue leaders)
+  </Card>
+  
+  <Card title="By vs Previous (ASC)" icon="arrow-trend-down">
+    Surface products with biggest sales drops
+  </Card>
+  
+  <Card title="By vs Previous (DESC)" icon="arrow-trend-up">
+    Identify fastest-growing products
+  </Card>
+</CardGroup>
+
+## Products Without Movement
+
+The **Stagnant Products (60 Days)** panel highlights SKUs requiring attention:
+
+### Detection Criteria
+
+<Warning>
+  A product is flagged as "stagnant" if:
+  - Product status = Active (not discontinued)
+  - AND zero sales in the last 60 days
+  - AND available in inventory
+</Warning>
+
+### Why This Matters
+
+**Business impact**:
+- Inventory carrying costs
+- Warehouse space waste
+- Cash flow tied up
+- Risk of expiration/obsolescence
+- Opportunity cost (could stock faster movers)
+
+### Action Playbook
+
+**For each stagnant product, investigate**:
+
+1. **Availability Issues**
+   - Is it actually in stock?
+   - Distribution gaps?
+   - Logistics problems?
+
+2. **Sales Team Knowledge**
+   - Do sellers know this product exists?
+   - Training gap?
+   - Missing from sales materials?
+
+3. **Pricing Problems**
+   - Uncompetitive pricing?
+   - Better alternatives available?
+   - Wrong price tier?
+
+4. **Market Conditions**
+   - Seasonal product out of season?
+   - Consumer preference shift?
+   - Competitive disruption?
+
+5. **Product Lifecycle**
+   - End of life product?
+   - Replacement available?
+   - Discontinuation candidate?
+
+### Intervention Options
+
+<CardGroup cols={2}>
+  <Card title="Promotional Push" icon="badge-percent">
+    - Discount to move inventory
+    - Bundle with popular items
+    - Limited-time offer
+    - Featured in weekly specials
+  </Card>
+  
+  <Card title="Training Campaign" icon="chalkboard-user">
+    - Product knowledge session
+    - Sales team incentive
+    - Demo units for sellers
+    - Benefits/features refresher
+  </Card>
+  
+  <Card title="Pricing Adjustment" icon="dollar-sign">
+    - Market comparison analysis
+    - Competitive pricing research
+    - Margin vs volume trade-off
+    - Strategic repositioning
+  </Card>
+  
+  <Card title="Discontinuation" icon="ban">
+    - Mark as inactive
+    - Liquidate remaining stock
+    - Replace with better alternative
+    - Free up catalog space
+  </Card>
+</CardGroup>
+
+<Note>
+  Best practice: Review stagnant products monthly. Products inactive 90+ days are strong discontinuation candidates unless seasonal.
+</Note>
+
+## High-Growth Products
+
+The **Products with Highest Growth** panel identifies rising stars:
+
+### Growth Detection
+
+<Info>
+  A product is flagged as "high growth" if:
+  - Revenue vs previous period > +10%
+  - AND minimum volume threshold met (filters noise)
+  - Sorted by growth percentage (highest first)
+</Info>
+
+### Growth Analysis
+
+**Understand why products are growing**:
+
+1. **Market Trends**
+   - Riding consumer trend wave?
+   - Seasonal surge?
+   - Category expansion?
+
+2. **Your Actions**
+   - Recent promotion impact?
+   - Price reduction effect?
+   - Improved availability?
+
+3. **Competitive Factors**
+   - Competitor stockout?
+   - Better than alternatives?
+   - Exclusive offering?
+
+4. **Product Quality**
+   - Superior features?
+   - Better value proposition?
+   - Positive word-of-mouth?
+
+### Amplification Strategies
+
+<CardGroup cols={2}>
+  <Card title="Stock Up" icon="warehouse">
+    Increase inventory to avoid stockouts during growth phase
+  </Card>
+  
+  <Card title="Expand Distribution" icon="truck">
+    Make available in more locations or channels
+  </Card>
+  
+  <Card title="Feature Prominently" icon="star">
+    Highlight in sales materials, email campaigns, website
+  </Card>
+  
+  <Card title="Train Sellers" icon="graduation-cap">
+    Ensure everyone knows about the success story
+  </Card>
+  
+  <Card title="Extend Line" icon="arrows-split-up-and-left">
+    Consider variants, sizes, or flavors
+  </Card>
+  
+  <Card title="Premium Pricing" icon="arrow-up">
+    Test price increases while demand is high
+  </Card>
+</CardGroup>
+
+<Tip>
+  Growth products moving from C to B to A classification represent your best investment opportunities. Allocate resources accordingly.
+</Tip>
+
+## Category Deep Dive
+
+When you select a specific category, additional insights appear:
+
+### Category Summary
+
+- Total category revenue
+- Number of SKUs in category
+- Category share of total business
+- Top 3 products in category
+- Growth trend vs previous period
+
+### Category Composition
+
+- Pareto breakdown (how many A/B/C products)
+- Average product performance
+- Category concentration risk
+- New products vs established items
+
+### Category Health Indicators
+
+<CardGroup cols={3}>
+  <Card title="🟢 Healthy" icon="circle-check" color="#00C49F">
+    Multiple products contributing, positive growth, balanced A/B/C mix
+  </Card>
+  
+  <Card title="🟡 Watch" icon="circle-exclamation" color="#FFB347">
+    One product dominates, flat growth, high C percentage
+  </Card>
+  
+  <Card title="🔴 At Risk" icon="circle-xmark" color="#E84855">
+    Declining category, many stagnant products, low seller adoption
+  </Card>
+</CardGroup>
+
+## Workflow Examples
+
+### Weekly Product Review (15 min)
+
+1. **Check Stagnant Products panel**
+   - Any new products without movement?
+   - Follow up on last week's action items
+
+2. **Scan Growth Products**
+   - Identify surprise performers
+   - Ensure adequate stock levels
+
+3. **Review Top 10 Products**
+   - Any unusual changes?
+   - Stock availability concerns?
+
+### Monthly Category Review (1 hour)
+
+1. **Select each category individually**
+2. **Analyze category Pareto chart**
+3. **Identify category A products** (protect at all costs)
+4. **Review category C products** (discontinuation candidates)
+5. **Check category growth trends**
+6. **Update category strategy**
+
+### Quarterly Portfolio Optimization (4 hours)
+
+1. **Generate full product ranking**
+2. **Identify discontinuation candidates**:
+   - Category C products
+   - Stagnant 90+ days
+   - Low margin
+   - Supplier issues
+3. **Create new product introduction plan**
+4. **Reallocate inventory investment**
+5. **Update sales team training priorities**
+6. **Set product-specific targets for next quarter**
+
+## Data Calculations
+
+### Active SKUs Count
+```
+Count of distinct id_producto
+where activo = True
+in productos master table
+```
+
+### Stagnant Products Detection
+```
+For each product in productos where activo = True:
+  last_sale_date = MAX(fecha) where id_producto = product
+  if last_sale_date < (today - 60 days) OR last_sale_date is NULL:
+    flag as stagnant
+```
+
+### Average Sales per SKU
+```
+Total Revenue / Count(distinct id_producto with sales > 0)
+```
+
+### Pareto Classification
+```
+1. Sort all products by revenue DESC
+2. Calculate cumulative % of total revenue
+3. Assign:
+   - Category A: Products until 80% cumulative
+   - Category B: Products from 80% to 95%
+   - Category C: Products from 95% to 100%
+```
+
+### Growth Calculation
+```
+growth_pct = (revenue_current_period - revenue_previous_period) / 
+             revenue_previous_period
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="80/20 Focus" icon="bullseye">
+    Spend 80% of your product management time on Category A products. They drive your business.
+  </Card>
+  
+  <Card title="Pruning" icon="scissors">
+    Regularly remove underperforming SKUs. A bloated catalog is expensive and confusing.
+  </Card>
+  
+  <Card title="Growth Amplification" icon="megaphone">
+    When a product starts growing, double down. Success breeds more success.
+  </Card>
+  
+  <Card title="Stock Alignment" icon="boxes-stacked">
+    Inventory investment should mirror Pareto classification. Don't overstock C products.
+  </Card>
+</CardGroup>
+
+## Related Views
+
+<CardGroup cols={3}>
+  <Card title="Client Analysis" icon="users" href="/features/client-analysis">
+    Which clients buy which products?
+  </Card>
+  
+  <Card title="Sales Team View" icon="user-tie" href="/features/sales-team-view">
+    Seller product mix analysis
+  </Card>
+  
+  <Card title="Alerts Center" icon="bell" href="/features/alerts-center">
+    Product-specific alerts
+  </Card>
+</CardGroup>

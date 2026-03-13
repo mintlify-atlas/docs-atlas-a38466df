@@ -1,97 +1,119 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Transform Excel Data into Sales Intelligence"
+description: "Sales KPI dashboard that converts Excel spreadsheets into actionable business insights with automated analytics, alerts, and performance tracking"
 ---
 
-## Setting up
+<div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-[#94cb04]/10 to-[#545454]/5 p-12 mb-12">
+  <div className="max-w-4xl">
+    <h1 className="text-5xl font-bold mb-4 text-[#1a1a1a]">
+      Visor KPI Comercial
+    </h1>
+    <p className="text-xl text-[#545454] mb-8 max-w-2xl">
+      From Excel chaos to sales intelligence clarity. A powerful dashboard that transforms raw sales data into automated KPIs, real-time alerts, and actionable insights for your entire sales team.
+    </p>
+    <div className="flex gap-4">
+      <a 
+        href="/quickstart" 
+        className="inline-flex items-center px-6 py-3 rounded-md bg-[#94cb04] text-white font-semibold hover:bg-[#7ba903] transition-colors"
+      >
+        Get Started
+      </a>
+      <a 
+        href="https://excel-to-kpi-dashboard.streamlit.app/" 
+        target="_blank"
+        className="inline-flex items-center px-6 py-3 rounded-md bg-white border-2 border-[#e0e0e0] text-[#1a1a1a] font-semibold hover:border-[#94cb04] transition-colors"
+      >
+        View Live Demo
+      </a>
+    </div>
+  </div>
+</div>
 
-Get your documentation site up and running in minutes.
+## What Problem Does It Solve?
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+Many distribution companies still manage their sales data with multiple Excel files, manual reports, and hours invested consolidating scattered information. **When data is fragmented, making good business decisions becomes slow and difficult.**
 
-## Make it yours
+Visor KPI Comercial solves this by:
 
-Design a docs site that looks great and empowers your users.
+- **Eliminating manual analysis** — converts Excel sales files into automatically processed KPIs
+- **Centralizing sales intelligence** — managers and salespeople access their metrics from a single dashboard
+- **Anticipating problems** — an alert engine detects performance drops, at-risk clients, and growth opportunities before they impact results
+- **Democratizing data** — each salesperson sees their individual report; management gets consolidated team views
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Executive Dashboard" icon="chart-line" href="/features/executive-summary">
+    High-level KPIs and team performance at a glance with real-time sales tracking
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Alert System" icon="bell" href="/features/alerts-center">
+    7 intelligent business rules that detect issues and opportunities automatically
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Client Analytics" icon="users" href="/features/client-analysis">
+    Pareto analysis, risk detection, and portfolio segmentation for strategic account management
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Product Intelligence" icon="box" href="/features/product-analysis">
+    Treemap visualization, rotation analysis, and SKU performance tracking
   </Card>
-</Columns>
+  <Card title="Sales Team Views" icon="user-tie" href="/features/sales-team-view">
+    Individual dashboards with quota tracking, rankings, and personal performance metrics
+  </Card>
+  <Card title="Management Reporting" icon="chart-bar" href="/features/management-view">
+    Team-wide analytics, comparative performance, and trend analysis across periods
+  </Card>
+</CardGroup>
 
-## Create beautiful pages
+## Quick Start
 
-Everything you need to create world-class documentation.
+<CardGroup cols={3}>
+  <Card title="Installation" icon="download" href="/installation">
+    Set up the dashboard in under 5 minutes
+  </Card>
+  <Card title="Data Import" icon="file-excel" href="/guides/data-import">
+    Learn how to load your Excel sales data
+  </Card>
+  <Card title="Understanding KPIs" icon="gauge" href="/guides/understanding-kpis">
+    Master the key performance indicators
+  </Card>
+</CardGroup>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## What You Get
 
-## Need inspiration?
+The system processes **27 months of historical data**, tracking:
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+- **12 salespeople** with performance profiles (star, stable, developing, problematic)
+- **180 clients** across 4 commercial channels
+- **60 SKUs** in 5 product categories
+- **~30,000 transactions** with automated validation
+- **7 active alert rules** (ALT001–ALT007)
+- **Less than 3 second load time** with full dataset
+
+<Note>
+**Live Demo Available**: See the complete interactive dashboard at [excel-to-kpi-dashboard.streamlit.app](https://excel-to-kpi-dashboard.streamlit.app/)
+</Note>
+
+## Technical Stack
+
+Built with modern Python data tools for performance and reliability:
+
+- **Streamlit** 1.32 — Multi-page interactive dashboard framework
+- **Plotly** 5.19 — Rich interactive visualizations (charts, treemaps, gauges)
+- **Pandas** 2.2 — ETL pipeline and data analysis
+- **NumPy** 1.26 — Statistical calculations and numeric processing
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start Guide" icon="rocket" href="/quickstart">
+    Get your first dashboard running in minutes
+  </Card>
+  <Card title="Architecture Overview" icon="sitemap" href="/technical/architecture">
+    Understand the system design and components
+  </Card>
+  <Card title="Configuration Guide" icon="gear" href="/configuration/settings">
+    Customize thresholds and business rules
+  </Card>
+  <Card title="Contributing" icon="code-pull-request" href="/development/contributing">
+    Help improve the project
+  </Card>
+</CardGroup>

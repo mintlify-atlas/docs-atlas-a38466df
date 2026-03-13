@@ -1,0 +1,488 @@
+---
+title: "KPI Engine"
+description: "Motor central de cálculo de KPIs comerciales con métricas agregadas y análisis por entidad"
+icon: "calculator"
+---
+
+## Descripción
+
+El motor de KPIs (`kpi_engine.py`) es el componente central para el cálculo de todas las métricas comerciales de Visor KPI. Procesa DataFrames ya filtrados y retorna estructuras listas para visualización.
+
+**Responsabilidades principales:**
+- Cálculo de KPIs gerenciales (ventas, margen, cobertura)
+- Métricas por vendedor con rankings y semáforos
+- Análisis de productos y clientes con Pareto
+- Evolución temporal y comparaciones interperiodo
+- Generación de insights ejecutivos automáticos
+
+---
+
+## KPIs Gerenciales
+
+### kpi_ventas_periodo()
+
+Calcula métricas agregadas de ventas para un período específico.
+
+```python
+def kpi_ventas_periodo(
+    df: pd.DataFrame,
+    df_anterior: pd.DataFrame | None = None,
+    objetivos_df: pd.DataFrame | None = None,
+    fecha_desde: date | None = None,
+    fecha_hasta: date | None = None,
+) -> dict
+```
+
+<ParamField path="df" type="pd.DataFrame" required>
+  DataFrame de ventas filtrado para el período actual
+</ParamField>
+
+<ParamField path="df_anterior" type="pd.DataFrame | None" default="None">
+  DataFrame del período anterior para comparaciones
+</ParamField>
+
+<ParamField path="objetivos_df" type="pd.DataFrame | None" default="None">
+  DataFrame de objetivos con columnas `periodo` y `objetivo`
+</ParamField>
+
+<ParamField path="fecha_desde" type="date | None" default="None">
+  Fecha de inicio del período para filtrar objetivos
+</ParamField>
+
+<ParamField path="fecha_hasta" type="date | None" default="None">
+  Fecha final del período para filtrar objetivos
+</ParamField>
+
+<ResponseField name="return" type="dict">
+  Diccionario con las siguientes claves:
+  
+  <Expandable title="Estructura del diccionario">
+    - `importe_total` (float): Suma de ventas netas del período
+    - `importe_vs_anterior` (float | None): Variación relativa vs período anterior (0.15 = +15%)
+    - `objetivo_total` (float): Suma de objetivos del período
+    - `cumplimiento_pct` (float | None): Porcentaje de cumplimiento (1.0 = 100%)
+    - `transacciones_count` (int): Número de transacciones
+    - `ticket_promedio` (float): Venta promedio por cliente único
+    - `clientes_unicos` (int): Cantidad de clientes distintos
+  </Expandable>
+</ResponseField>
+
+**Ejemplo de uso:**
+
+```python
+from src.kpi_engine import kpi_ventas_periodo
+from datetime import date
+
+kpis = kpi_ventas_periodo(
+    df=ventas_marzo,
+    df_anterior=ventas_febrero,
+    objetivos_df=objetivos,
+    fecha_desde=date(2026, 3, 1),
+    fecha_hasta=date(2026, 3, 31)
+)
+
+print(f"Ventas: ${kpis['importe_total']:,.0f}")
+print(f"Cumplimiento: {kpis['cumplimiento_pct']*100:.1f}%")
+```
+
+---
+
+### kpi_margen()
+
+Calcula métricas de rentabilidad y margen bruto.
+
+```python
+def kpi_margen(
+    df: pd.DataFrame,
+    df_anterior: pd.DataFrame | None = None,
+) -> dict
+```
+
+<ParamField path="df" type="pd.DataFrame" required>
+  DataFrame con columna `margen_neto` e `importe_neto`
+</ParamField>
+
+<ParamField path="df_anterior" type="pd.DataFrame | None" default="None">
+  DataFrame del período anterior
+</ParamField>
+
+<ResponseField name="return" type="dict">
+  - `margen_bruto_total` (float): Suma del margen en $
+  - `margen_pct_promedio` (float): Margen promedio como % de ventas
+  - `margen_vs_anterior` (float | None): Variación del margen
+</ResponseField>
+
+---
+
+### kpi_cobertura_clientes()
+
+Analiza la cobertura de cartera y movimiento de clientes.
+
+```python
+def kpi_cobertura_clientes(
+    df: pd.DataFrame,
+    clientes_df: pd.DataFrame,
+    df_anterior: pd.DataFrame | None = None,
+) -> dict
+```
+
+<ParamField path="df" type="pd.DataFrame" required>
+  DataFrame de ventas del período
+</ParamField>
+
+<ParamField path="clientes_df" type="pd.DataFrame" required>
+  DataFrame maestro de clientes con columna `activo`
+</ParamField>
+
+<ParamField path="df_anterior" type="pd.DataFrame | None" default="None">
+  Ventas del período anterior
+</ParamField>
+
+<ResponseField name="return" type="dict">
+  <Expandable title="Métricas de cobertura">
+    - `clientes_activos_periodo` (int): Clientes activos que compraron
+    - `clientes_total` (int): Total de clientes activos en cartera
+    - `cobertura_pct` (float): % de cartera activa con compras (0-1)
+    - `clientes_perdidos` (int): Compraron en anterior pero no en actual
+    - `clientes_nuevos` (int): Primera compra en el período
+    - `clientes_recuperados` (int): Volvieron a comprar después de inactividad
+  </Expandable>
+</ResponseField>
+
+---
+
+## KPIs por Vendedor
+
+### kpi_por_vendedor()
+
+Genera DataFrame completo con todos los KPIs por vendedor incluyendo rankings y semáforos.
+
+```python
+def kpi_por_vendedor(
+    df: pd.DataFrame,
+    objetivos_df: pd.DataFrame,
+    df_anterior: pd.DataFrame | None = None,
+    fecha_desde: date | None = None,
+    fecha_hasta: date | None = None,
+) -> pd.DataFrame
+```
+
+<ParamField path="df" type="pd.DataFrame" required>
+  DataFrame de ventas con columnas: `id_vendedor`, `importe_neto`, `id_cliente`, `nombre_vendedor`, `zona_vendedor`, `perfil`
+</ParamField>
+
+<ParamField path="objetivos_df" type="pd.DataFrame" required>
+  Objetivos por vendedor y período
+</ParamField>
+
+<ParamField path="df_anterior" type="pd.DataFrame | None" default="None">
+  Ventas del período anterior para deltas
+</ParamField>
+
+<ParamField path="fecha_desde" type="date | None" default="None">
+  Fecha inicio para filtrar objetivos
+</ParamField>
+
+<ParamField path="fecha_hasta" type="date | None" default="None">
+  Fecha final para filtrar objetivos
+</ParamField>
+
+<ResponseField name="return" type="pd.DataFrame">
+  DataFrame con una fila por vendedor y las siguientes columnas:
+  
+  <Expandable title="Columnas del DataFrame">
+    - `id_vendedor` (str)
+    - `nombre_vendedor` (str)
+    - `zona_vendedor` (str)
+    - `perfil` (str)
+    - `importe_total` (float)
+    - `transacciones` (int)
+    - `clientes_únicos` (int)
+    - `objetivo` (float)
+    - `cumplimiento_pct` (float | None)
+    - `ticket_promedio` (float)
+    - `importe_vs_mes_anterior` (float | None)
+    - `ranking_actual` (int)
+    - `ranking_anterior` (int)
+    - `delta_ranking` (int): Diferencia de ranking (positivo = mejoró)
+    - `color_semaforo` (str): Color hex para visualización
+    - `label_semaforo` (str): `"success"`, `"warning"`, o `"danger"`
+  </Expandable>
+</ResponseField>
+
+**Lógica de semáforo:**
+- 🟢 Verde (`success`): cumplimiento ≥ 100%
+- 🟡 Naranja (`warning`): cumplimiento ≥ 80%
+- 🔴 Rojo (`danger`): cumplimiento < 80%
+
+**Ejemplo:**
+
+```python
+vendedores = kpi_por_vendedor(
+    df=ventas_filtradas,
+    objetivos_df=objetivos,
+    df_anterior=ventas_mes_anterior,
+    fecha_desde=periodo_desde,
+    fecha_hasta=periodo_hasta
+)
+
+# Top 5 vendedores
+top5 = vendedores.head(5)
+for _, v in top5.iterrows():
+    print(f"{v['nombre_vendedor']}: ${v['importe_total']:,.0f} ({v['cumplimiento_pct']*100:.1f}%)")
+```
+
+---
+
+## KPIs de Productos
+
+### kpi_productos()
+
+Analiza ventas por producto con clasificación Pareto automática.
+
+```python
+def kpi_productos(
+    df: pd.DataFrame,
+    df_anterior: pd.DataFrame | None = None,
+) -> pd.DataFrame
+```
+
+<ParamField path="df" type="pd.DataFrame" required>
+  DataFrame con columnas: `id_producto`, `importe_neto`, `cantidad`, `descripcion`, `categoria`
+</ParamField>
+
+<ParamField path="df_anterior" type="pd.DataFrame | None" default="None">
+  Ventas del período anterior
+</ParamField>
+
+<ResponseField name="return" type="pd.DataFrame">
+  DataFrame con columnas:
+  - `id_producto` (str)
+  - `descripcion` (str)
+  - `categoria` (str)
+  - `importe_total` (float)
+  - `unidades_vendidas` (float)
+  - `n_transacciones` (int)
+  - `participacion_pct` (float): % del total
+  - `acumulado_pct` (float): % acumulado Pareto
+  - `categoria_pareto` (str): "A", "B", o "C"
+  - `vs_periodo_anterior` (float | None): Variación vs anterior
+</ResponseField>
+
+---
+
+## KPIs de Clientes
+
+### kpi_clientes()
+
+Genera análisis completo por cliente con Pareto y flags de riesgo.
+
+```python
+def kpi_clientes(
+    df: pd.DataFrame,
+    clientes_df: pd.DataFrame,
+    df_anterior: pd.DataFrame | None = None,
+    fecha_hasta: date | None = None,
+) -> pd.DataFrame
+```
+
+<ParamField path="df" type="pd.DataFrame" required>
+  Ventas del período con `id_cliente`, `importe_neto`, `fecha`
+</ParamField>
+
+<ParamField path="clientes_df" type="pd.DataFrame" required>
+  Maestro de clientes
+</ParamField>
+
+<ParamField path="df_anterior" type="pd.DataFrame | None" default="None">
+  Ventas período anterior
+</ParamField>
+
+<ParamField path="fecha_hasta" type="date | None" default="None">
+  Fecha de referencia para calcular días desde última compra
+</ParamField>
+
+<ResponseField name="return" type="pd.DataFrame">
+  <Expandable title="Columnas">
+    - `id_cliente` (str)
+    - `razon_social` (str)
+    - `canal` (str)
+    - `zona` (str)
+    - `nombre_vendedor` (str)
+    - `importe_total` (float)
+    - `frecuencia_compra` (int): Cantidad de compras
+    - `ticket_promedio` (float)
+    - `ultima_compra` (Timestamp)
+    - `primera_compra` (Timestamp)
+    - `dias_desde_ultima_compra` (int)
+    - `categoria_pareto` (str): "A", "B", o "C"
+    - `participacion_pct` (float)
+    - `acumulado_pct` (float)
+    - `vs_periodo_anterior` (float | None)
+    - `flag_en_riesgo` (bool): True si categoría A/B con >30 días sin compra
+  </Expandable>
+</ResponseField>
+
+**Flag de riesgo:**
+
+Se marca `flag_en_riesgo=True` cuando:
+- Cliente es categoría **A** o **B** en Pareto
+- Y tiene **más de 30 días** sin comprar
+
+---
+
+## Evolución Temporal
+
+### kpi_evolucion_mensual()
+
+Genera serie temporal de ventas mensuales con objetivos.
+
+```python
+def kpi_evolucion_mensual(
+    df: pd.DataFrame,
+    objetivos_df: pd.DataFrame | None = None,
+    id_vendedor: str | None = None,
+    n_meses: int = 13,
+) -> pd.DataFrame
+```
+
+<ParamField path="df" type="pd.DataFrame" required>
+  DataFrame completo de ventas (no filtrado por período)
+</ParamField>
+
+<ParamField path="objetivos_df" type="pd.DataFrame | None" default="None">
+  Objetivos mensuales
+</ParamField>
+
+<ParamField path="id_vendedor" type="str | None" default="None">
+  Si se especifica, filtra por ese vendedor
+</ParamField>
+
+<ParamField path="n_meses" type="int" default="13">
+  Cantidad de meses a incluir
+</ParamField>
+
+<ResponseField name="return" type="pd.DataFrame">
+  DataFrame con columnas:
+  - `periodo` (Period): Período mensual
+  - `periodo_str` (str): Formato "YYYY-MM"
+  - `importe` (float): Ventas del mes
+  - `n_ventas` (int): Cantidad de transacciones
+  - `n_clientes` (int): Clientes únicos
+  - `objetivo` (float): Objetivo mensual (si disponible)
+</ResponseField>
+
+---
+
+## Insights Automáticos
+
+### generar_insight_ejecutivo()
+
+Genera un párrafo de texto con análisis automático para la vista gerencial.
+
+```python
+def generar_insight_ejecutivo(
+    kpi_ventas: dict,
+    kpi_vend: pd.DataFrame,
+    alertas_df: pd.DataFrame | None = None,
+) -> str
+```
+
+<ParamField path="kpi_ventas" type="dict" required>
+  Diccionario retornado por `kpi_ventas_periodo()`
+</ParamField>
+
+<ParamField path="kpi_vend" type="pd.DataFrame" required>
+  DataFrame retornado por `kpi_por_vendedor()`
+</ParamField>
+
+<ParamField path="alertas_df" type="pd.DataFrame | None" default="None">
+  DataFrame de alertas activas
+</ParamField>
+
+<ResponseField name="return" type="str">
+  Párrafo de texto markdown con:
+  - Ventas totales y variación vs anterior
+  - Cumplimiento de objetivo
+  - Distribución de vendedores por semáforo (verde/naranja/rojo)
+  - Resumen de alertas por severidad
+</ResponseField>
+
+**Ejemplo de salida:**
+
+```
+El equipo lleva **$2.450.000** en ventas, +12.3% vs período anterior, 
+alcanzando el **94.2%** del objetivo. 8 vendedores están en 🟢 verde, 
+3 en 🟡 naranja y 1 en 🔴 rojo. Se detectaron **12 alertas activas**: 
+2 críticas, 5 medias, 5 informativas.
+```
+
+---
+
+## Helpers Internos
+
+Estas funciones son utilizadas internamente por el motor:
+
+### _get_objetivo_periodo()
+
+Suma objetivos por vendedor en un rango de fechas.
+
+```python
+def _get_objetivo_periodo(
+    objetivos_df: pd.DataFrame,
+    fecha_desde: date | None,
+    fecha_hasta: date | None,
+) -> pd.DataFrame
+```
+
+Retorna DataFrame con columnas: `id_vendedor`, `objetivo`
+
+### _color_semaforo()
+
+Mapea cumplimiento a color hex.
+
+```python
+def _color_semaforo(cumpl: float | None) -> str
+```
+
+- `cumpl >= 1.0`: `"#00C49F"` (verde)
+- `cumpl >= 0.8`: `"#FFB347"` (naranja)
+- Otro: `"#E84855"` (rojo)
+
+### _label_semaforo()
+
+Mapea cumplimiento a etiqueta.
+
+```python
+def _label_semaforo(cumpl: float | None) -> str
+```
+
+Retorna: `"success"`, `"warning"`, o `"danger"`
+
+---
+
+## Dependencias
+
+```python
+import pandas as pd
+import numpy as np
+from datetime import date, timedelta
+from src.pareto import calcular_pareto
+from config import fmt_moneda, fmt_pct, fmt_delta
+```
+
+## Notas de Implementación
+
+<Note>
+  Todas las funciones esperan DataFrames **ya filtrados** por fecha, vendedor, zona, etc. 
+  El filtrado se realiza en `data_loader.py` antes de invocar el motor de KPIs.
+</Note>
+
+<Warning>
+  Los valores de cumplimiento y variaciones pueden ser `None` cuando:
+  - No hay objetivos definidos
+  - No hay datos del período anterior
+  - El denominador es cero (división por cero)
+  
+  Manejar estos casos en la capa de visualización.
+</Warning>

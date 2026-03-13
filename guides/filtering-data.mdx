@@ -1,0 +1,514 @@
+---
+title: Filtering Data
+description: Master the filter system to analyze specific segments and time periods
+icon: 'filter'
+---
+
+## Filter System Overview
+
+Visor KPI's filter system allows you to slice and dice data across multiple dimensions simultaneously. All filters are **global** and persist across pages during your session.
+
+<Note>
+Filters are managed through Streamlit's `session_state` mechanism, ensuring your selections remain consistent as you navigate between dashboard pages.
+</Note>
+
+## Filter Bar Location
+
+The filter sidebar appears on the **left side** of every page. It includes:
+
+- 📅 **Period Filter** - Date range selection
+- 🗺️ **Zone Filter** - Sales territory/geography
+- 👤 **Salesperson Filter** - Individual vendor selection
+- 🏪 **Channel Filter** - Customer channel type
+- 🔄 **Clear Filters Button** - Reset to defaults
+
+---
+
+## Period Filter
+
+### Preset Periods
+
+The system provides 9 common presets calculated dynamically from today's date:
+
+<AccordionGroup>
+  <Accordion title="Hoy (Today)" icon="calendar-day">
+    **Range**: Current day only
+    
+    **Use Case**: Real-time intraday monitoring
+  </Accordion>
+
+  <Accordion title="Esta semana (This Week)" icon="calendar-week">
+    **Range**: Monday of current week through today
+    
+    **Use Case**: Weekly sales reviews
+  </Accordion>
+
+  <Accordion title="Este mes (This Month)" icon="calendar">
+    **Range**: 1st of current month through today
+    
+    **Use Case**: Month-to-date performance (DEFAULT)
+    
+    <Tip>
+    This is the default period when you first load the dashboard.
+    </Tip>
+  </Accordion>
+
+  <Accordion title="Último mes (Last Month)" icon="calendar-minus">
+    **Range**: Full previous calendar month
+    
+    **Use Case**: Complete month analysis, month-over-month comparisons
+  </Accordion>
+
+  <Accordion title="Este trimestre (This Quarter)" icon="calendar-days">
+    **Range**: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec)
+    
+    **Use Case**: Quarterly business reviews
+  </Accordion>
+
+  <Accordion title="Último trimestre (Last Quarter)" icon="calendar-days">
+    **Range**: Full previous quarter
+    
+    **Use Case**: Quarter-over-quarter trend analysis
+  </Accordion>
+
+  <Accordion title="Este año (This Year)" icon="calendar-range">
+    **Range**: January 1st through today
+    
+    **Use Case**: Year-to-date performance
+  </Accordion>
+
+  <Accordion title="Último año (Last Year)" icon="calendar-range">
+    **Range**: Full previous calendar year
+    
+    **Use Case**: Annual reviews, year-over-year comparisons
+  </Accordion>
+
+  <Accordion title="Personalizado (Custom)" icon="calendar-pen">
+    **Range**: User-defined start and end dates
+    
+    **Use Case**: Ad-hoc analysis, specific campaigns, fiscal periods
+    
+    <Info>
+    Selecting "Personalizado" reveals two date picker inputs:
+    - **Desde** (From): Start date
+    - **Hasta** (To): End date
+    </Info>
+  </Accordion>
+</AccordionGroup>
+
+### Technical Implementation
+
+Period calculation is handled in `config.py` via the `get_periodos()` function, with date ranges computed using:
+
+```python
+from datetime import date, timedelta
+from dateutil.relativedelta import relativedelta
+```
+
+**Session State Keys**:
+- `periodo_sel` - Selected period name (string)
+- `fecha_desde` - Start date (date object)
+- `fecha_hasta` - End date (date object)
+
+---
+
+## Zone Filter
+
+### Purpose
+
+Filter data by **sales territory or geographic zone**. Zones are defined in the `Vendedores` sheet.
+
+### Configuration
+
+**Available Zones**: Configured in `config.py` as `ZONAS` constant
+
+Common zone values:
+- Norte
+- Sur
+- Centro
+- CABA (Ciudad Autónoma de Buenos Aires)
+- GBA (Gran Buenos Aires)
+- Interior
+- Litoral
+- Patagonia
+
+<Note>
+Zone values are **case-sensitive** and must match exactly with values in your `Vendedores.zona` column.
+</Note>
+
+### Multi-Select Behavior
+
+- **Empty selection** (default): Shows ALL zones
+- **One or more selected**: Shows ONLY selected zones
+- **Placeholder text**: "Todas las zonas"
+
+### Filter Application
+
+Implemented in `data_loader.py:154-156`:
+
+```python
+if zonas:
+    df = df[df["zona_vendedor"].isin(zonas)]
+```
+
+---
+
+## Salesperson Filter
+
+### Purpose
+
+Filter to specific salespeople for individual or team subset analysis.
+
+### Dynamic Loading
+
+The salesperson list is loaded dynamically from your data using:
+
+```python
+from src.data_loader import get_lista_vendedores
+vendedores_lista = get_lista_vendedores()
+```
+
+This function:
+1. Loads the `Vendedores` sheet
+2. Filters to only `activo = TRUE` records
+3. Returns list with `id_vendedor`, `nombre_completo`, and `zona`
+
+### Display Format
+
+Salespeople are displayed as:
+```
+Nombre Completo (Zona)
+```
+
+Example:
+- Juan Pérez (Norte)
+- María González (CABA)
+- Carlos Rodríguez (Sur)
+
+### Zone Interaction
+
+<Tip>
+**Smart Filtering**: When you select zone(s), the salesperson dropdown automatically filters to show ONLY salespeople from those zones.
+</Tip>
+
+Implementation in `filters.py:143-147`:
+```python
+if zonas_sel:
+    opciones_vend = {
+        k: v for k, v in opciones_vend.items()
+        if any(z in k for z in zonas_sel)
+    }
+```
+
+### Multi-Select Behavior
+
+- **Empty** (default): All salespeople (no filter applied)
+- **One or more selected**: Only those specific salespeople
+- **Placeholder**: "Todos los vendedores"
+
+### Filter Application
+
+Implemented in `data_loader.py:151-152`:
+
+```python
+if vendedores:
+    df = df[df["id_vendedor"].isin(vendedores)]
+```
+
+---
+
+## Channel Filter
+
+### Purpose
+
+Segment analysis by **customer sales channel** (distribution method or customer type).
+
+### Configuration
+
+**Available Channels**: Configured in `config.py` as `CANALES` constant
+
+Common channel values:
+- Retail (Retailers)
+- Distribuidores (Distributors)
+- E-commerce (Online sales)
+- Mayorista (Wholesale)
+- Farmacia (Pharmacy)
+- Supermercados (Supermarkets)
+- Institucional (Institutional)
+
+### Multi-Select Behavior
+
+- **Empty** (default): All channels included
+- **One or more selected**: Only selected channels
+- **Placeholder**: "Todos los canales"
+
+### Filter Application
+
+Implemented in `data_loader.py:158-160`:
+
+```python
+if canales:
+    df = df[df["canal"].isin(canales)]
+```
+
+Note: Channel comes from the `Clientes` table, joined to `Ventas`.
+
+---
+
+## Filter Combinations
+
+### How Filters Work Together
+
+All filters use **AND logic** - data must match ALL selected criteria:
+
+<Steps>
+  <Step title="Date Range">
+    First, data is filtered to the selected date range (always applied).
+  </Step>
+
+  <Step title="Salesperson">
+    If salespeople are selected, keep only their transactions.
+  </Step>
+
+  <Step title="Zone">
+    If zones are selected, keep only transactions from salespeople in those zones.
+  </Step>
+
+  <Step title="Channel">
+    If channels are selected, keep only transactions from customers in those channels.
+  </Step>
+</Steps>
+
+### Example Combination
+
+**Selected Filters**:
+- Period: "Este mes" (This month)
+- Zone: "Norte"
+- Salesperson: "Juan Pérez", "María González"
+- Channel: "Retail", "E-commerce"
+
+**Result**: Shows only transactions from:
+- This month to date
+- Salespeople Juan Pérez OR María González
+- Both in zone "Norte"
+- Customers in Retail OR E-commerce channels
+
+<Info>
+Multiple selections within the same filter use **OR logic** (any match), while different filters use **AND logic** (all must match).
+</Info>
+
+---
+
+## Clear Filters Button
+
+The **🔄 Limpiar filtros** button resets all filters to default state:
+
+- Period → "Este mes" (Current month)
+- Zone → Empty (all zones)
+- Salesperson → Empty (all salespeople)
+- Channel → Empty (all channels)
+
+**Technical Implementation** (`filters.py:182-190`):
+
+```python
+if st.button("🔄 Limpiar filtros", use_container_width=True):
+    hoy = date.today()
+    st.session_state["periodo_sel"]    = "Este mes"
+    st.session_state["fecha_desde"]    = hoy.replace(day=1)
+    st.session_state["fecha_hasta"]    = hoy
+    st.session_state["zonas_sel"]      = []
+    st.session_state["vendedores_sel"] = []
+    st.session_state["canales_sel"]    = []
+    st.rerun()
+```
+
+<Warning>
+Clicking "Limpiar filtros" will trigger an immediate page reload with default filters. Unsaved filter states cannot be recovered.
+</Warning>
+
+---
+
+## Advanced Filtering
+
+### Previous Period Comparison
+
+Many KPIs show **vs. previous period** deltas. The system automatically calculates the equivalent previous period:
+
+**Function**: `get_filtered_data_periodo_anterior()` in `data_loader.py:165-177`
+
+**Logic** (from `config.py:get_periodo_anterior()`):
+1. Calculate period duration (days)
+2. Shift both start and end dates backward by that duration
+3. Apply same vendor/zone/channel filters to previous period data
+
+**Example**:
+- Current period: March 1-15 (15 days)
+- Previous period: February 14-28 (15 days)
+
+### Master DataFrame Filtering
+
+All filters operate on the **master dataframe**, which includes:
+- Sales transactions (`Ventas`)
+- Salesperson info (joined from `Vendedores`)
+- Customer info (joined from `Clientes`)
+- Product info (joined from `Productos`)
+
+This allows filtering by any dimension across all entities.
+
+---
+
+## Filter Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Start Broad, Then Narrow" icon="funnel">
+    Begin with default filters to see the full picture, then progressively narrow focus to specific zones, people, or channels.
+  </Card>
+
+  <Card title="Use Period Presets" icon="calendar">
+    Preset periods ensure consistent date ranges for reporting. Use "Personalizado" only for ad-hoc analysis.
+  </Card>
+
+  <Card title="Combine Zone + Vendor" icon="users">
+    Select a zone, then choose specific salespeople within that zone for focused team analysis.
+  </Card>
+
+  <Card title="Channel Segmentation" icon="building">
+    Compare performance across channels to identify which channels are most/least profitable.
+  </Card>
+</CardGroup>
+
+### Performance Tips
+
+<Tip>
+**Cache-Friendly Filtering**
+
+The master dataset is cached. Changing filters only re-applies the filter logic (fast), without reloading data from Excel.
+
+**Slowest operation**: First load or cache expiration (1 hour)
+
+**Fastest operation**: Changing filter selections
+</Tip>
+
+---
+
+## Troubleshooting Filters
+
+<AccordionGroup>
+  <Accordion title="No Data After Filtering" icon="table">
+    **Symptoms**: Dashboard shows "No hay datos para los filtros seleccionados"
+    
+    **Causes**:
+    1. Date range contains no transactions
+    2. Selected salesperson has no sales in period
+    3. Zone/channel combination doesn't exist
+    4. Multiple filters too restrictive
+    
+    **Solution**: Click "🔄 Limpiar filtros" and reapply one filter at a time to isolate the issue.
+  </Accordion>
+
+  <Accordion title="Salesperson List Empty" icon="user-slash">
+    **Symptoms**: Salesperson dropdown shows no options
+    
+    **Causes**:
+    1. Selected zone has no active salespeople
+    2. All salespeople have `activo = FALSE`
+    3. Data loading error
+    
+    **Solution**:
+    1. Clear zone filter to see all salespeople
+    2. Check `Vendedores` sheet for `activo = TRUE` records
+    3. Verify data file integrity
+  </Accordion>
+
+  <Accordion title="Filters Not Persisting" icon="rotate">
+    **Symptoms**: Filters reset when navigating between pages
+    
+    **Causes**:
+    1. Browser session ended
+    2. App restarted
+    3. Cache cleared
+    
+    **Solution**: Filters are session-based. This is expected behavior after restart. Reapply your filters.
+  </Accordion>
+
+  <Accordion title="Unexpected Date Range" icon="calendar-xmark">
+    **Symptoms**: "Este mes" shows wrong dates
+    
+    **Causes**:
+    1. System date incorrect
+    2. Timezone mismatch
+    
+    **Solution**: Preset periods use `date.today()` from Python's datetime. Check server/system time.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Filter State Technical Reference
+
+### Session State Keys
+
+All filter selections are stored in `st.session_state` with these keys:
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `periodo_sel` | str | "Este mes" | Selected period name |
+| `fecha_desde` | date | 1st of current month | Start date |
+| `fecha_hasta` | date | Today | End date |
+| `vendedores_sel` | list[str] | `[]` | Selected vendor IDs |
+| `zonas_sel` | list[str] | `[]` | Selected zones |
+| `canales_sel` | list[str] | `[]` | Selected channels |
+| `alertas_revisadas` | set | `set()` | Reviewed alert IDs (Alerts page) |
+| `data_loaded` | bool | `False` | Data load flag |
+
+### Initialization
+
+Filters are initialized in `filters.py:16-33` via `init_session_state()`:
+
+```python
+def init_session_state() -> None:
+    hoy = date.today()
+    primer_dia_mes = hoy.replace(day=1)
+    
+    defaults = {
+        "periodo_sel":       "Este mes",
+        "fecha_desde":       primer_dia_mes,
+        "fecha_hasta":       hoy,
+        "vendedores_sel":    [],
+        "zonas_sel":         [],
+        "canales_sel":       [],
+        "alertas_revisadas": set(),
+        "data_loaded":       False,
+    }
+    for key, val in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = val
+```
+
+### Filter Return Structure
+
+The `render_sidebar_filters()` function returns a dict:
+
+```python
+{
+    "fecha_desde":    date,
+    "fecha_hasta":    date,
+    "vendedores_sel": list[str],
+    "zonas_sel":      list[str],
+    "canales_sel":    list[str],
+    "periodo_sel":    str,
+}
+```
+
+This dict is used in every page to fetch filtered data:
+
+```python
+filtros = render_sidebar_filters()
+df = get_filtered_data(
+    filtros["fecha_desde"],
+    filtros["fecha_hasta"],
+    filtros["vendedores_sel"] or None,
+    filtros["zonas_sel"] or None,
+    filtros["canales_sel"] or None,
+)
+```

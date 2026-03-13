@@ -1,0 +1,231 @@
+---
+title: Introduction
+description: Transform Excel sales data into actionable business intelligence with Visor KPI Comercial
+---
+
+## Welcome to Visor KPI Comercial
+
+Visor KPI Comercial is a sales intelligence dashboard that transforms raw Excel sales data into actionable business insights. Designed for distribution companies, it eliminates manual analysis, centralizes commercial intelligence, and enables data-driven decision making.
+
+<Note>
+  **Live Demo Available**: Experience the full interactive application at [https://excel-to-kpi-dashboard.streamlit.app/](https://excel-to-kpi-dashboard.streamlit.app/)
+</Note>
+
+## The Problem It Solves
+
+Many distribution companies still manage their commercial information with multiple Excel files, manual reports, and hours of work invested in consolidating data that arrives late, scattered, and with errors.
+
+The real problem isn't just operational effort: **when data is dispersed, making good business decisions becomes difficult and slow.**
+
+**Visor KPI Comercial solves exactly that:**
+
+<CardGroup cols={2}>
+  <Card title="Eliminates Manual Analysis" icon="robot">
+    Converts Excel sales files into automatically processed KPIs
+  </Card>
+  <Card title="Centralizes Intelligence" icon="chart-network">
+    Managers and salespeople access their metrics from a single dashboard
+  </Card>
+  <Card title="Anticipates Problems" icon="bell">
+    Alert engine detects performance drops, at-risk customers, and growth opportunities before they impact results
+  </Card>
+  <Card title="Democratizes Data" icon="users">
+    Each salesperson accesses their own individual report; management gets the full team consolidated view
+  </Card>
+</CardGroup>
+
+## Key Business Questions Answered
+
+This system is designed to answer the questions that matter most in a sales team:
+
+- Which salespeople are exceeding or falling short of their targets?
+- Which customers concentrate most of the revenue?
+- Which products are really driving the business?
+- Where are the opportunities or risks in the commercial portfolio?
+- Which customers are at risk of stopping purchases?
+- Which alerts require immediate action from the team?
+
+## System Overview
+
+Visor KPI Comercial provides **five integrated views** for comprehensive sales intelligence:
+
+<Steps>
+  <Step title="Executive Summary">
+    KPIs of the business on a single screen — total sales, target fulfillment, gross margin, and customer coverage, with rankings of top sellers, customers, and products for the period.
+  </Step>
+  <Step title="Management View">
+    Monthly evolution of the complete team, performance comparison between sellers, and ranking with variation vs. previous period.
+  </Step>
+  <Step title="Seller View">
+    Each salesperson accesses their own dashboard with quota fulfillment, team ranking position, personal sales evolution, and portfolio details.
+  </Step>
+  <Step title="Customer Analysis">
+    Pareto A/B/C segmentation of the portfolio, frequency vs. amount scatter plot, Gini concentration index, and identification of customers at risk of inactivity.
+  </Step>
+  <Step title="Product Analysis">
+    Portfolio treemap by category and volume, Pareto of products, identification of SKUs without movement, and trend analysis by product.
+  </Step>
+  <Step title="Alerts & Opportunities Center">
+    Unified hub with active alerts classified by severity (critical, medium, low) and automatically detected opportunities, with suggested actions for each case.
+  </Step>
+</Steps>
+
+## Key System Metrics
+
+The mock dataset demonstrates the system's capabilities with realistic data:
+
+| Indicator | Value |
+|-----------|-------|
+| Historical coverage | 27 months (Jan 2023 – Mar 2026) |
+| Monitored sellers | 12 (profiles: star / stable / development / problematic) |
+| Customers in portfolio | 180 (4 commercial channels) |
+| Analyzed SKUs | 60 products in 5 categories |
+| Processed transactions | ~30,000 records |
+| Active alert rules | 7 (ALT001–ALT007) |
+| Automated tests | 51 tests passing |
+| Dashboard load time | < 3 seconds with complete dataset |
+
+## Business Intelligence Capabilities
+
+### Automated ETL
+
+<Card icon="database">
+  - **Excel ingestion** without manual configuration: the system reads, validates, and transforms the sales file into a reproducible pipeline with `pandas` + `openpyxl`
+  - Automatic detection of nulls, inconsistent dates, and outliers
+  - Data normalization by channel, zone, and period
+</Card>
+
+### KPI Engine
+
+Automated calculation of the most critical commercial indicators:
+
+| KPI | Description |
+|-----|-------------|
+| Period Sales | Total revenue and by segment |
+| Gross Margin | Profitability by seller, customer, and product |
+| Quota Fulfillment | % of target reached vs monthly goal |
+| Portfolio Coverage | % of active customers over total assigned |
+| Variation vs Previous Period | Absolute and relative delta MoM / YoY |
+| Purchase Frequency | Recurrence by customer and channel |
+| Product Rotation | Active vs inactive SKUs by period |
+
+### Pareto Analysis 80/20
+
+<Card icon="chart-pie">
+  - Automatic classification of customers and products in **A / B / C** categories
+  - Calculation of the **Gini concentration index** of the portfolio
+  - Identification of customers generating 80% of revenue
+  - Detection of low-rotation SKUs with potential stockout risk
+</Card>
+
+### Intelligent Alert Engine
+
+7 pre-configured business rules that trigger real-time alerts:
+
+| ID | Alert | Severity |
+|----|-------|----------|
+| ALT001 | Seller with fulfillment < 70% | Critical |
+| ALT002 | Customer without purchase in last 30 days | High |
+| ALT003 | Product with sales drop > 30% MoM | High |
+| ALT004 | Customer portfolio with excessive concentration (Gini > 0.6) | Medium |
+| ALT005 | Margin below minimum threshold | Critical |
+| ALT006 | Portfolio coverage < 60% | High |
+| ALT007 | Opportunity: customer with high frequency and low ticket | Opportunity |
+
+## Technology Stack
+
+<CardGroup cols={2}>
+  <Card title="Python 3.10+" icon="python">
+    Main runtime environment
+  </Card>
+  <Card title="Streamlit 1.32" icon="window">
+    UI framework / Multi-page app
+  </Card>
+  <Card title="Plotly 5.19" icon="chart-line">
+    Interactive visualizations (charts, treemaps, gauges)
+  </Card>
+  <Card title="Pandas 2.2" icon="table">
+    ETL pipeline and data analysis
+  </Card>
+  <Card title="NumPy 1.26" icon="calculator">
+    Numerical and statistical calculations
+  </Card>
+  <Card title="openpyxl 3.1.5+" icon="file-excel">
+    Excel file reading/writing
+  </Card>
+  <Card title="Faker 23.2" icon="users">
+    Localized mock data generation (es_AR)
+  </Card>
+  <Card title="pytest 8.0" icon="vial">
+    Automated test suite
+  </Card>
+</CardGroup>
+
+## Project Architecture
+
+The project follows a clean architecture with clear separation of concerns:
+
+```
+visor_kpi/
+├── app.py                     # Executive Summary (main page)
+├── config.py                  # Colors, thresholds, formats
+├── requirements.txt
+│
+├── pages/                     # Multi-page views
+│   ├── 1_gerencia.py          # Consolidated management view
+│   ├── 2_vendedores.py        # Individual seller view
+│   ├── 3_clientes.py          # Customer portfolio analysis
+│   ├── 4_productos.py         # Product ranking and analysis
+│   └── 5_alertas.py           # Alerts and opportunities center
+│
+├── src/                       # Business logic core
+│   ├── data_loader.py         # ETL: reading, validation, and Excel filtering
+│   ├── kpi_engine.py          # KPI calculation engine
+│   ├── pareto.py              # 80/20 analysis and A/B/C classification
+│   ├── alerts_engine.py       # Alert engine (ALT001–ALT007)
+│   └── reports.py             # Exportable report generation
+│
+├── components/                # Reusable UI
+│   ├── kpi_card.py            # KPI cards with traffic light
+│   ├── charts.py              # Plotly visualizations
+│   ├── filters.py             # Sidebar filters with session_state
+│   └── rankings.py            # Ranking tables with styled HTML
+│
+├── data/
+│   ├── mock/
+│   │   └── generate_mock_data.py   # Demo data generator (Faker es_AR)
+│   └── raw/
+│       └── mock_data.xlsx          # Generated locally
+│
+└── tests/
+    ├── test_mock_data.py       # Dataset validation
+    ├── test_kpis.py            # KPI engine tests
+    └── test_alerts.py          # Alert engine tests
+```
+
+<Note>
+  **Clear layer separation:**
+  - `src/` → Pure business logic, 100% testable and UI-independent
+  - `components/` → Reusable presentation layer
+  - `pages/` → Streamlit multi-page view orchestration
+</Note>
+
+## Design System
+
+The dashboard features a professional dark theme optimized for data visualization:
+
+- **Dark palette**: `bg_dark=#0F1923` · `bg_card=#1A2535`
+- **Performance traffic light**: `success=#00C49F` · `warning=#FFB347` · `danger=#E84855`
+- **Typography**: Inter via Google Fonts
+- **Responsive**: Breakpoint at 768px, optimized for tablet and mobile use
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get up and running with a working dashboard in minutes
+  </Card>
+  <Card title="Installation" icon="download" href="/installation">
+    Detailed setup instructions and environment configuration
+  </Card>
+</CardGroup>

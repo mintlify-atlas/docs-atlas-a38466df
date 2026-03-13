@@ -1,0 +1,439 @@
+---
+title: 'Client Analysis'
+description: 'Portfolio segmentation, Pareto analysis, and client risk management tools'
+icon: 'users-viewfinder'
+---
+
+## Overview
+
+The **Client Analysis** view provides advanced portfolio intelligence using Pareto principles, segmentation analytics, and predictive risk indicators. This is where you transform raw client data into actionable account management strategies.
+
+<Info>
+  **Who uses this view**: Sales managers, account managers, and commercial analysts responsible for portfolio optimization and client retention.
+</Info>
+
+## Portfolio Health Dashboard
+
+Four critical metrics summarize your client portfolio status:
+
+<CardGroup cols={2}>
+  <Card title="Active Clients" icon="circle-check">
+    Number of clients with purchases:
+    - Unique customers who bought in period
+    - Portfolio coverage percentage
+    - Visual health indicator
+  </Card>
+  
+  <Card title="Portfolio Coverage" icon="percent">
+    Activation rate:
+    - % of assigned clients who purchased
+    - Target: Maximize this percentage
+    - Lower % = opportunity to reactivate
+  </Card>
+  
+  <Card title="New Clients" icon="star">
+    First-time buyers:
+    - Clients making first purchase
+    - Growth indicator
+    - New business generation metric
+  </Card>
+  
+  <Card title="Lost Clients" icon="user-xmark">
+    Inactive accounts:
+    - Previously active, now inactive
+    - Churn metric
+    - Requires win-back campaigns
+  </Card>
+</CardGroup>
+
+## Advanced Filters
+
+The expandable **Advanced Filters** panel allows granular segmentation:
+
+### Filter Options
+
+- **Pareto Category**: A / B / C classification
+- **Sales Channel**: Traditional, Wholesale, Foodservice, E-commerce
+- **Status**:
+  - All
+  - Active (recent purchases)
+  - At Risk (30+ days no purchase)
+  - Inactive (60+ days no purchase)
+
+<Tip>
+  Create custom views by combining filters. Example: "Show me Category A clients in Foodservice channel who are at risk" to create a targeted intervention list.
+</Tip>
+
+## Pareto Analysis
+
+### The 80/20 Principle
+
+Visor KPI automatically classifies your entire client portfolio using Pareto analysis:
+
+<CardGroup cols={3}>
+  <Card title="Category A" icon="crown" color="#00C49F">
+    **Top 20% of clients** generating ~80% of revenue
+    - Your most valuable accounts
+    - Deserve 60% of your time
+    - VIP treatment required
+  </Card>
+  
+  <Card title="Category B" icon="arrow-trend-up" color="#FFB347">
+    **Next 30% of clients** generating ~15% of revenue
+    - Medium-value accounts
+    - Growth potential to become A
+    - Deserve 30% of your time
+  </Card>
+  
+  <Card title="Category C" icon="handshake" color="#6C9EE5">
+    **Remaining 50% of clients** generating ~5% of revenue
+    - Smaller accounts
+    - Efficient service model
+    - Deserve 10% of your time
+  </Card>
+</CardGroup>
+
+### Pareto Chart
+
+The **Client Pareto Chart** visualizes revenue concentration:
+
+- **Bar chart**: Individual client contributions (top 30 shown)
+- **Cumulative line**: Running percentage of total revenue
+- **80% marker**: Shows where Category A ends
+
+**How to read it**:
+- X-axis: Clients ranked by revenue (highest to lowest)
+- Left Y-axis: Revenue contribution
+- Right Y-axis: Cumulative percentage
+- The steeper the line, the more concentrated your portfolio
+
+<Warning>
+  If your line reaches 80% in fewer than 10 clients, you have dangerous concentration risk. One lost account could severely impact revenue.
+</Warning>
+
+## Client Segmentation Scatter
+
+The **Purchase Frequency vs Revenue** scatter plot reveals hidden patterns:
+
+### Four Quadrants
+
+```
+        High Revenue
+            │
+   Champions │ Potentials
+─────────────┼─────────────
+   Occasional│ Small Buyers
+            │
+        Low Revenue
+```
+
+**Quadrant interpretations**:
+
+1. **Champions** (High Frequency + High Revenue)
+   - Your best clients—protect at all costs
+   - Category A accounts
+   - Action: White-glove service
+
+2. **Potentials** (Low Frequency + High Revenue)
+   - Large orders but infrequent
+   - Category A/B accounts
+   - Action: Increase visit frequency
+
+3. **Occasional** (High Frequency + Low Revenue)
+   - Loyal but small transactions
+   - Category B/C accounts
+   - Action: Upselling opportunity
+
+4. **Small Buyers** (Low Frequency + Low Revenue)
+   - Minimal engagement
+   - Category C accounts
+   - Action: Automation or re-evaluation
+
+<Note>
+  Each dot represents a client. Hover over any point to see client name, exact purchase count, and total revenue.
+</Note>
+
+## Concentration Metrics
+
+Three statistical indicators measure portfolio risk:
+
+<CardGroup cols={3}>
+  <Card title="Category A Clients" icon="users">
+    - **Count**: Number of A-class clients
+    - **% of Portfolio**: e.g., "18 clients (20%)" 
+    - Lower % is typical (Pareto law)
+  </Card>
+  
+  <Card title="Category A Revenue" icon="dollar-sign">
+    - **% of Total Sales**: e.g., "78.5%"
+    - **Target**: 75-85% is healthy
+    - Below 70% = too fragmented
+    - Above 90% = too concentrated
+  </Card>
+  
+  <Card title="Gini Index" icon="chart-line">
+    - **Value**: 0.000 to 1.000
+    - **0 = perfect equality** (all clients equal)
+    - **1 = total concentration** (one client = all revenue)
+    - **Healthy range**: 0.45 - 0.65
+  </Card>
+</CardGroup>
+
+### Gini Index Interpretation
+
+| Gini Score | Portfolio Health | Action Required |
+|------------|------------------|------------------|
+| < 0.40 | Too fragmented | Focus on key accounts |
+| 0.40 - 0.65 | ✅ Balanced | Maintain current strategy |
+| 0.65 - 0.75 | ⚠️ High concentration | Diversification plan |
+| > 0.75 | 🔴 Dangerous concentration | Urgent diversification |
+
+<Warning>
+  A Gini index above 0.70 means you're dependent on a small number of clients. Losing just one could be catastrophic. Prioritize new business development immediately.
+</Warning>
+
+## Complete Client Table
+
+The **Full Client Table** displays all portfolio accounts with comprehensive data:
+
+### Table Columns
+
+| Column | Description | Use Case |
+|--------|-------------|----------|
+| **Client Name** | Company/Store name | Identification |
+| **Pareto** | A/B/C classification | Prioritization |
+| **Total Sales** | Revenue in period | Value measurement |
+| **Purchases** | Number of transactions | Engagement level |
+| **Avg Ticket** | Revenue per purchase | Deal size |
+| **Last Purchase** | Days since last order | Recency tracking |
+| **vs Previous** | % change from prior period | Trend identification |
+| **Channel** | Sales channel | Segmentation |
+| **Seller** | Assigned account manager | Accountability |
+| **Status** | 🟢/🟡/🔴 indicator | Health signal |
+
+### Sorting and Filtering
+
+<Tip>
+  Click any column header to sort. Use filters to create action lists:
+  - Sort by "Last Purchase" DESC to find clients to call this week
+  - Filter to Category A + Status 🔴 to identify crisis accounts
+  - Sort by "vs Previous" ASC to find accounts with biggest drops
+</Tip>
+
+## At-Risk Clients
+
+The **Clients at Risk** panel highlights accounts in danger of churn:
+
+### Risk Detection Rules
+
+<Warning>
+  A client is flagged at-risk if:
+  - Pareto Category = A or B (valuable account)
+  - AND days since last purchase > 30
+  - AND purchase frequency declining
+</Warning>
+
+### Risk Levels
+
+| Days Inactive | Risk Level | Action Priority |
+|---------------|------------|------------------|
+| 30-45 days | 🟡 Medium | Schedule call this week |
+| 45-60 days | 🟠 High | In-person visit required |
+| 60+ days | 🔴 Critical | Manager escalation |
+
+### Intervention Playbook
+
+**For at-risk clients**:
+
+1. **Research Phase** (Day 30)
+   - Review recent order history
+   - Check for price disputes or quality issues
+   - Talk to delivery/logistics team
+
+2. **Contact Phase** (Day 35-40)
+   - Personal phone call from account manager
+   - Ask open-ended questions about needs
+   - Offer special promotion or incentive
+
+3. **Escalation Phase** (Day 45+)
+   - In-person visit with manager
+   - Custom retention proposal
+   - Address any service gaps
+
+4. **Win-Back Phase** (Day 60+)
+   - Executive-level engagement
+   - Significant pricing concession if needed
+   - Long-term contract negotiation
+
+<Note>
+  Prevention is cheaper than reactivation. Category A clients should never reach 60+ days inactive—catch them early.
+</Note>
+
+## Growth Opportunities
+
+The **Growth Opportunities** panel identifies accounts with expansion potential:
+
+### Opportunity Criteria
+
+<Info>
+  A client is flagged as an opportunity if:
+  - Pareto Category = B (medium-value)
+  - AND revenue growth > 20% vs previous period
+  - AND increasing purchase frequency
+</Info>
+
+**Why this matters**: These are your future Category A clients. With focused attention, they can become major accounts.
+
+### Growth Strategies
+
+<CardGroup cols={2}>
+  <Card title="Frequency Increase" icon="calendar-plus">
+    If they're buying more often:
+    - Suggest standing orders
+    - Offer volume discounts
+    - Increase visit frequency
+  </Card>
+  
+  <Card title="Ticket Expansion" icon="arrow-up">
+    If ticket size is growing:
+    - Cross-sell complementary products
+    - Introduce premium lines
+    - Bundle deals
+  </Card>
+  
+  <Card title="Category Expansion" icon="boxes-stacked">
+    If single-category buyer:
+    - Demo new product categories
+    - Trial promotions
+    - Success stories from similar clients
+  </Card>
+  
+  <Card title="Channel Development" icon="network-wired">
+    If single-channel buyer:
+    - Introduce e-commerce platform
+    - Wholesale opportunities
+    - Exclusive distribution rights
+  </Card>
+</CardGroup>
+
+## Individual Client Deep Dive
+
+The **Client Detail** section allows drilling into any account:
+
+### Select a Client
+
+Use the dropdown to choose any client from your portfolio. The detail panel shows:
+
+### Client Overview Cards
+
+<CardGroup cols={2}>
+  <Card title="Total Revenue" icon="dollar-sign">
+    Complete sales history for this account
+  </Card>
+  
+  <Card title="Purchase Frequency" icon="rotate">
+    Number of orders placed
+  </Card>
+  
+  <Card title="Pareto Category" icon="ranking-star">
+    A/B/C classification
+  </Card>
+  
+  <Card title="Days Since Purchase" icon="clock">
+    Recency metric
+  </Card>
+</CardGroup>
+
+### Client Evolution Chart
+
+A 6-month trend line shows:
+- Monthly sales from this client
+- Growth/decline pattern
+- Seasonal tendencies
+- Forecast trajectory
+
+**Use cases**:
+- Prepare for account review meetings
+- Identify seasonal patterns
+- Detect early warning signs
+- Celebrate growth with client
+
+<Tip>
+  Before any major client meeting, pull up their detail page to review recent performance and come prepared with data-driven talking points.
+</Tip>
+
+## Workflow Examples
+
+### Weekly Portfolio Review (15 min)
+
+1. Check **At-Risk Clients** panel
+2. Sort by days inactive
+3. Create call list for top 10
+4. Note specific issues for each
+5. Execute calls throughout week
+
+### Monthly Strategic Planning (45 min)
+
+1. Review **Pareto Chart** for concentration risk
+2. Check **Gini Index** trend
+3. Analyze **Growth Opportunities** list
+4. Identify 3-5 accounts for intensive focus
+5. Create account development plans
+6. Allocate resources accordingly
+
+### Quarterly Business Review (2 hours)
+
+1. Filter to **Category A** clients only
+2. Review each account's 6-month trend
+3. Flag any declining accounts
+4. Schedule face-to-face reviews
+5. Prepare custom retention offers
+6. Update account plans in CRM
+
+## Data Calculations
+
+### Pareto Classification Algorithm
+
+```
+1. Sort all clients by revenue DESC
+2. Calculate cumulative % of total revenue
+3. Assign categories:
+   - Category A: Clients until cumulative reaches 80%
+   - Category B: Clients from 80% to 95%
+   - Category C: Remaining clients (95-100%)
+```
+
+### Gini Index Formula
+
+```
+Gini = (Sum of absolute differences in revenue) / 
+       (2 × n × sum of all revenues)
+
+where n = number of clients
+```
+
+### Client Risk Score
+
+```
+if category in ['A', 'B']:
+    if days_since_last_purchase > 30:
+        risk = True
+    if vs_previous_period < -0.25:
+        risk = Critical
+```
+
+## Related Views
+
+<CardGroup cols={3}>
+  <Card title="Sales Team View" icon="user-tie" href="/features/sales-team-view">
+    Individual seller portfolios
+  </Card>
+  
+  <Card title="Alerts Center" icon="bell" href="/features/alerts-center">
+    Automated client risk alerts
+  </Card>
+  
+  <Card title="Executive Summary" icon="chart-line" href="/features/executive-summary">
+    High-level portfolio health
+  </Card>
+</CardGroup>

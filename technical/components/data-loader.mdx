@@ -1,0 +1,590 @@
+---
+title: "Data Loader"
+description: "ETL y gestión de datos con caching para cargar, parsear y filtrar datasets desde Excel"
+icon: "database"
+---
+
+## Descripción
+
+El módulo `data_loader.py` maneja toda la carga, transformación y filtrado de datos de Visor KPI. Lee archivos Excel, aplica parsing de tipos, construye el DataFrame maestro con joins y proporciona funciones de filtrado.
+
+**Características:**
+- Carga de 5 hojas Excel: Ventas, Vendedores, Clientes, Productos, Objetivos
+- Parsing automático de tipos (fechas, numéricos, booleanos)
+- Caching con `@st.cache_data` para performance
+- DataFrame maestro con todos los joins aplicados
+- Funciones de filtrado por fecha, vendedor, zona, canal
+- Helpers para obtener listas de valores únicos
+
+---
+
+## Configuración
+
+El archivo de datos se configura en `config.py`:
+
+```python
+from config import DATA_PATH
+# DATA_PATH = "data/visor_kpi_data.xlsx"
+```
+
+---
+
+## Funciones de Carga
+
+### load_data()
+
+Carga y parsea el archivo Excel completo.
+
+```python
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_data() -> dict[str, pd.DataFrame]
+```
+
+<ResponseField name="return" type="dict[str, pd.DataFrame]">
+  Diccionario con 5 DataFrames:
+  
+  <Expandable title="Estructura del diccionario">
+    **`ventas`** - Transacciones de venta
+    - Columnas: `id_venta`, `fecha`, `id_vendedor`, `id_cliente`, `id_producto`
+    - Columnas numéricas: `importe_neto`, `importe_bruto`, `cantidad`, `precio_unitario`, `descuento_pct`
+    - Columnas derivadas: `año`, `mes`, `periodo` (Period[M])
+    
+    **`vendedores`** - Maestro de vendedores
+    - Columnas: `id_vendedor`, `nombre_completo`, `zona`, `perfil`, `activo`
+    - Numéricas: `objetivo_mensual_base`, `antiguedad_años`
+    - Booleanas: `activo`
+    
+    **`clientes`** - Maestro de clientes
+    - Columnas: `id_cliente`, `razon_social`, `canal`, `zona`, `id_vendedor_asignado`, `activo`
+    - Fechas: `fecha_alta`
+    - Numéricas: `objetivo_mensual_cliente`
+    - Booleanas: `activo`
+    
+    **`productos`** - Maestro de productos
+    - Columnas: `id_producto`, `descripcion`, `categoria`, `activo`
+    - Numéricas: `precio_unitario`, `costo_unitario`
+    - Booleanas: `activo`
+    
+    **`objetivos`** - Objetivos por vendedor y período
+    - Columnas: `id_vendedor`, `periodo`, `objetivo`
+    - Fechas: `periodo` (datetime, primer día del mes)
+    - Numéricas: `objetivo`
+  </Expandable>
+</ResponseField>
+
+**Comportamiento:**
+- Cachea resultados por **1 hora** (3600 segundos)
+- Lanza `FileNotFoundError` si no existe el archivo
+- Convierte tipos automáticamente con `pd.to_numeric()` y `pd.to_datetime()`
+- Rellena valores `NaN` numéricos con 0
+
+**Ejemplo:**
+
+```python
+from src.data_loader import load_data
+
+data = load_data()
+
+print(f"Total ventas: {len(data['ventas'])}")
+print(f"Vendedores activos: {data['vendedores']['activo'].sum()}")
+print(f"Rango de fechas: {data['ventas']['fecha'].min()} a {data['ventas']['fecha'].max()}")
+```
+
+---
+
+### get_master_df()
+
+Construye DataFrame maestro con todos los joins y columnas calculadas.
+
+```python
+@st.cache_data(ttl=3600, show_spinner=False)
+def get_master_df() -> pd.DataFrame
+```
+
+<ResponseField name="return" type="pd.DataFrame">
+  DataFrame completo con todas las columnas de ventas más:
+  
+  <Expandable title="Columnas del maestro">
+    **De ventas originales:**
+    - `id_venta`, `fecha`, `año`, `mes`, `periodo`
+    - `id_vendedor`, `id_cliente`, `id_producto`
+    - `importe_neto`, `importe_bruto`, `cantidad`, `precio_unitario`, `descuento_pct`
+    
+    **Joined de vendedores:**
+    - `nombre_vendedor` (antes: `nombre_completo`)
+    - `zona_vendedor` (antes: `zona`)
+    - `perfil`
+    
+    **Joined de clientes:**
+    - `razon_social`
+    - `canal`
+    - `zona_cliente` (antes: `zona`)
+    - `id_vendedor_asignado`
+    - `cliente_activo` (antes: `activo`)
+    
+    **Joined de productos:**
+    - `descripcion`
+    - `categoria`
+    - `precio_catalogo` (antes: `precio_unitario`)
+    - `costo_catalogo` (antes: `costo_unitario`)
+    
+    **Columnas calculadas:**
+    - `margen_neto` (float): Margen bruto en $ = importe_neto - costo
+    - `margen_pct` (float): Margen como % del importe (0-1, clipped)
+  </Expandable>
+</ResponseField>
+
+**Cálculo de margen:**
+
+```python
+margen_neto = importe_neto - (costo_catalogo / precio_catalogo * importe_neto)
+margen_pct = (margen_neto / importe_neto).clip(0, 1)
+```
+
+**Ejemplo:**
+
+```python
+from src.data_loader import get_master_df
+
+master = get_master_df()
+
+# Ventas por vendedor con margen
+resumen = master.groupby("nombre_vendedor").agg({
+    "importe_neto": "sum",
+    "margen_neto": "sum",
+    "id_venta": "count"
+}).reset_index()
+
+resumen["margen_pct_prom"] = resumen["margen_neto"] / resumen["importe_neto"]
+print(resumen.head())
+```
+
+---
+
+## Funciones de Filtrado
+
+### get_filtered_data()
+
+Filtra el DataFrame maestro por múltiples criterios.
+
+```python
+def get_filtered_data(
+    fecha_desde: date,
+    fecha_hasta: date,
+    vendedores: list[str] | None = None,
+    zonas: list[str] | None      = None,
+    canales: list[str] | None    = None,
+) -> pd.DataFrame
+```
+
+<ParamField path="fecha_desde" type="date" required>
+  Fecha de inicio del período (inclusive)
+</ParamField>
+
+<ParamField path="fecha_hasta" type="date" required>
+  Fecha de fin del período (inclusive)
+</ParamField>
+
+<ParamField path="vendedores" type="list[str] | None" default="None">
+  Lista de `id_vendedor` a incluir. `None` = todos los vendedores.
+</ParamField>
+
+<ParamField path="zonas" type="list[str] | None" default="None">
+  Lista de zonas a incluir (filtra por `zona_vendedor`). `None` = todas las zonas.
+</ParamField>
+
+<ParamField path="canales" type="list[str] | None" default="None">
+  Lista de canales a incluir (filtra por `canal` del cliente). `None` = todos los canales.
+</ParamField>
+
+<ResponseField name="return" type="pd.DataFrame">
+  DataFrame maestro filtrado según los criterios. Es una copia independiente.
+</ResponseField>
+
+**Lógica de filtrado:**
+- Filtros de fecha son **obligatorios** y **inclusivos**
+- Filtros de dimensiones son **opcionales** y se aplican con `isin()`
+- Si un filtro es `None`, no se aplica (equivalente a "todos")
+- Retorna `.copy()` para evitar mutaciones
+
+**Ejemplo:**
+
+```python
+from src.data_loader import get_filtered_data
+from datetime import date
+
+# Ventas de marzo 2026, zona Norte, canal Retail
+ventas_marzo = get_filtered_data(
+    fecha_desde=date(2026, 3, 1),
+    fecha_hasta=date(2026, 3, 31),
+    zonas=["Norte"],
+    canales=["Retail"]
+)
+
+print(f"Transacciones filtradas: {len(ventas_marzo)}")
+print(f"Importe total: ${ventas_marzo['importe_neto'].sum():,.0f}")
+```
+
+---
+
+### get_filtered_data_periodo_anterior()
+
+Filtra datos del período anterior equivalente.
+
+```python
+def get_filtered_data_periodo_anterior(
+    fecha_desde: date,
+    fecha_hasta: date,
+    vendedores: list[str] | None = None,
+    zonas: list[str] | None      = None,
+    canales: list[str] | None    = None,
+) -> pd.DataFrame
+```
+
+**Parámetros:** Idénticos a `get_filtered_data()`
+
+<ResponseField name="return" type="pd.DataFrame">
+  DataFrame maestro del período anterior con la misma duración.
+  
+  Ejemplo: si el período actual es 1-31 marzo (31 días), retorna 29 enero - 28 febrero (31 días).
+</ResponseField>
+
+**Funcionamiento:**
+- Calcula período anterior usando `config.get_periodo_anterior()`
+- Aplica los mismos filtros de vendedor/zona/canal
+- Mantiene la duración del período original
+
+**Ejemplo:**
+
+```python
+from src.data_loader import get_filtered_data, get_filtered_data_periodo_anterior
+from datetime import date
+
+actual = get_filtered_data(
+    fecha_desde=date(2026, 3, 1),
+    fecha_hasta=date(2026, 3, 31)
+)
+
+anterior = get_filtered_data_periodo_anterior(
+    fecha_desde=date(2026, 3, 1),
+    fecha_hasta=date(2026, 3, 31)
+)
+
+importe_actual = actual["importe_neto"].sum()
+importe_anterior = anterior["importe_neto"].sum()
+delta = (importe_actual - importe_anterior) / importe_anterior
+
+print(f"Ventas actual: ${importe_actual:,.0f}")
+print(f"Ventas anterior: ${importe_anterior:,.0f}")
+print(f"Variación: {delta*100:+.1f}%")
+```
+
+---
+
+## Funciones Helper
+
+### get_lista_vendedores()
+
+Retorna lista de vendedores activos para construir filtros UI.
+
+```python
+def get_lista_vendedores() -> list[dict]
+```
+
+<ResponseField name="return" type="list[dict]">
+  Lista de diccionarios con estructura:
+  ```python
+  [
+      {
+          "id_vendedor": "V001",
+          "nombre_completo": "Juan Pérez",
+          "zona": "Norte"
+      },
+      ...
+  ]
+  ```
+  
+  Solo incluye vendedores con `activo=True`.
+</ResponseField>
+
+**Ejemplo Streamlit:**
+
+```python
+import streamlit as st
+from src.data_loader import get_lista_vendedores
+
+vendedores = get_lista_vendedores()
+opciones = {v["nombre_completo"]: v["id_vendedor"] for v in vendedores}
+
+seleccionados = st.multiselect(
+    "Filtrar por vendedor",
+    options=opciones.keys()
+)
+
+ids_vendedores = [opciones[nombre] for nombre in seleccionados]
+```
+
+---
+
+### get_lista_zonas()
+
+Retorna lista ordenada de zonas únicas.
+
+```python
+def get_lista_zonas() -> list[str]
+```
+
+<ResponseField name="return" type="list[str]">
+  Lista ordenada alfabéticamente de zonas de vendedores.
+  Ejemplo: `["Centro", "Norte", "Sur"]`
+</ResponseField>
+
+**Ejemplo:**
+
+```python
+from src.data_loader import get_lista_zonas
+import streamlit as st
+
+zonas = get_lista_zonas()
+zonas_filtro = st.multiselect("Zona", options=zonas, default=zonas)
+```
+
+---
+
+### get_lista_canales()
+
+Retorna lista ordenada de canales únicos.
+
+```python
+def get_lista_canales() -> list[str]
+```
+
+<ResponseField name="return" type="list[str]">
+  Lista ordenada de canales de cliente.
+  Ejemplo: `["Distribuidor", "Retail", "Wholesaler"]`
+</ResponseField>
+
+---
+
+### check_data_available()
+
+Verifica existencia del archivo de datos.
+
+```python
+def check_data_available() -> bool
+```
+
+<ResponseField name="return" type="bool">
+  `True` si el archivo existe en `DATA_PATH`, `False` en caso contrario.
+</ResponseField>
+
+**Uso en app:**
+
+```python
+import streamlit as st
+from src.data_loader import check_data_available
+
+if not check_data_available():
+    st.error("⚠️ No se encontró el archivo de datos.")
+    st.info("Ejecutá: `python data/mock/generate_mock_data.py`")
+    st.stop()
+
+# Continuar con carga normal
+data = load_data()
+```
+
+---
+
+## Gestión de Cache
+
+### Configuración de Cache
+
+Ambas funciones principales usan `@st.cache_data`:
+
+```python
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_data() -> dict[str, pd.DataFrame]:
+    ...
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def get_master_df() -> pd.DataFrame:
+    ...
+```
+
+**Parámetros:**
+- `ttl=3600`: Cache válido por 1 hora (3600 segundos)
+- `show_spinner=False`: No muestra spinner de Streamlit durante carga
+
+### Invalidar Cache
+
+Para forzar recarga de datos:
+
+```python
+import streamlit as st
+from src.data_loader import load_data, get_master_df
+
+if st.button("🔄 Recargar datos"):
+    load_data.clear()
+    get_master_df.clear()
+    st.rerun()
+```
+
+---
+
+## Flujo de Datos Típico
+
+```python
+from src.data_loader import load_data, get_filtered_data, get_filtered_data_periodo_anterior
+from src.kpi_engine import kpi_ventas_periodo
+from datetime import date
+
+# 1. Cargar datos raw
+data = load_data()
+
+# 2. Filtrar período actual
+ventas = get_filtered_data(
+    fecha_desde=date(2026, 3, 1),
+    fecha_hasta=date(2026, 3, 31),
+    zonas=["Norte"]
+)
+
+# 3. Obtener período anterior
+ventas_anterior = get_filtered_data_periodo_anterior(
+    fecha_desde=date(2026, 3, 1),
+    fecha_hasta=date(2026, 3, 31),
+    zonas=["Norte"]
+)
+
+# 4. Calcular KPIs
+kpis = kpi_ventas_periodo(
+    df=ventas,
+    df_anterior=ventas_anterior,
+    objetivos_df=data["objetivos"],
+    fecha_desde=date(2026, 3, 1),
+    fecha_hasta=date(2026, 3, 31)
+)
+
+print(f"Ventas: ${kpis['importe_total']:,.0f}")
+print(f"vs anterior: {kpis['importe_vs_anterior']*100:+.1f}%")
+print(f"Cumplimiento: {kpis['cumplimiento_pct']*100:.1f}%")
+```
+
+---
+
+## Estructura del Archivo Excel
+
+El archivo `visor_kpi_data.xlsx` debe tener 5 hojas:
+
+### Hoja "Ventas"
+
+| Columna | Tipo | Ejemplo |
+|---------|------|----------|
+| `id_venta` | str | "V2026030001" |
+| `fecha` | date | 2026-03-15 |
+| `id_vendedor` | str | "V001" |
+| `id_cliente` | str | "CLI042" |
+| `id_producto` | str | "PRD123" |
+| `importe_neto` | float | 15750.00 |
+| `importe_bruto` | float | 18000.00 |
+| `cantidad` | float | 25.0 |
+| `precio_unitario` | float | 630.00 |
+| `descuento_pct` | float | 0.125 |
+
+### Hoja "Vendedores"
+
+| Columna | Tipo | Ejemplo |
+|---------|------|----------|
+| `id_vendedor` | str | "V001" |
+| `nombre_completo` | str | "Juan Pérez" |
+| `zona` | str | "Norte" |
+| `perfil` | str | "Senior" |
+| `activo` | bool | True |
+| `objetivo_mensual_base` | float | 500000.0 |
+| `antiguedad_años` | float | 5.0 |
+
+### Hoja "Clientes"
+
+| Columna | Tipo | Ejemplo |
+|---------|------|----------|
+| `id_cliente` | str | "CLI042" |
+| `razon_social` | str | "Distribuidora XYZ SA" |
+| `canal` | str | "Distribuidor" |
+| `zona` | str | "Centro" |
+| `id_vendedor_asignado` | str | "V003" |
+| `activo` | bool | True |
+| `fecha_alta` | date | 2024-01-15 |
+
+### Hoja "Productos"
+
+| Columna | Tipo | Ejemplo |
+|---------|------|----------|
+| `id_producto` | str | "PRD123" |
+| `descripcion` | str | "Producto Premium 500ml" |
+| `categoria` | str | "Línea Premium" |
+| `precio_unitario` | float | 630.00 |
+| `costo_unitario` | float | 380.00 |
+| `activo` | bool | True |
+
+### Hoja "Objetivos"
+
+| Columna | Tipo | Ejemplo |
+|---------|------|----------|
+| `id_vendedor` | str | "V001" |
+| `periodo` | date | 2026-03-01 |
+| `objetivo` | float | 520000.0 |
+
+---
+
+## Generación de Datos Mock
+
+Para crear el archivo Excel con datos de prueba:
+
+```bash
+python visor_kpi/data/mock/generate_mock_data.py
+```
+
+Esto genera `data/visor_kpi_data.xlsx` con:
+- 12 meses de historial
+- 15 vendedores activos
+- 150 clientes
+- 80 productos
+- ~8000 transacciones
+
+---
+
+## Dependencias
+
+```python
+import os
+import sys
+import pandas as pd
+import streamlit as st
+from datetime import date
+from config import DATA_PATH, get_periodo_anterior
+```
+
+---
+
+## Notas de Performance
+
+<Tip>
+  **Cache strategy:** El cache de 1 hora balancea:
+  - ✅ Performance: evita recargar Excel en cada interacción
+  - ✅ Datos actualizados: si se actualiza el Excel, se recarga en &lt;1h
+  - ❌ Memoria: mantiene ~10-50MB en RAM según tamaño del dataset
+</Tip>
+
+<Warning>
+  **Joins y memoria:** `get_master_df()` hace 3 joins left, lo que puede 
+  duplicar el tamaño del DataFrame de ventas. Para datasets >1M filas, 
+  considerar:
+  - Lazy loading (solo join columnas necesarias)
+  - Filtrado antes del join
+  - Uso de categorías de pandas para strings
+</Warning>
+
+<Info>
+  **Tipos de datos:** El parsing automático usa `pd.to_numeric(errors='coerce')`, 
+  que convierte valores inválidos a `NaN` y luego a 0. Verificar calidad de datos 
+  en el Excel para evitar pérdidas silenciosas.
+</Info>

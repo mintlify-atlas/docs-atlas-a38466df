@@ -1,0 +1,461 @@
+---
+title: "Pareto Analysis"
+description: "Análisis 80/20 automático para clasificar clientes y productos por importancia comercial"
+icon: "chart-pie"
+---
+
+## Descripción
+
+El módulo de análisis Pareto (`pareto.py`) implementa la clasificación 80/20 (principio de Pareto) para identificar las entidades más importantes en términos de ventas.
+
+**Aplicaciones:**
+- Clasificar clientes en categorías A/B/C según facturación
+- Identificar productos estrella vs cola larga
+- Calcular concentración de ventas (índice de Gini)
+- Priorizar recursos comerciales y de marketing
+
+**Categorías Pareto:**
+- **A**: Top performers (0-80% acumulado) → Clientes clave
+- **B**: Performers medios (80-95% acumulado) → Potencial de crecimiento
+- **C**: Cola larga (95-100% acumulado) → Baja contribución
+
+---
+
+## Funciones Principales
+
+### calcular_pareto()
+
+Agrega columnas de análisis Pareto a un DataFrame.
+
+```python
+def calcular_pareto(
+    df: pd.DataFrame,
+    columna_valor: str,
+    columna_id: str,
+) -> pd.DataFrame
+```
+
+<ParamField path="df" type="pd.DataFrame" required>
+  DataFrame con datos a analizar (puede estar en cualquier orden)
+</ParamField>
+
+<ParamField path="columna_valor" type="str" required>
+  Nombre de la columna numérica a usar para el ranking (ej: `"importe_total"`, `"cantidad"`)
+</ParamField>
+
+<ParamField path="columna_id" type="str" required>
+  Nombre de la columna con el identificador único (ej: `"id_cliente"`, `"id_producto"`)
+</ParamField>
+
+<ResponseField name="return" type="pd.DataFrame">
+  DataFrame original con 3 columnas adicionales:
+  
+  <Expandable title="Columnas agregadas">
+    - **`participacion_pct`** (float): Porcentaje del total que representa esta fila (0-1)
+    - **`acumulado_pct`** (float): Porcentaje acumulado ordenado descendente (0-1)
+    - **`categoria_pareto`** (str): Categoría asignada:
+      - `"A"`: acumulado ≤ 80%
+      - `"B"`: acumulado > 80% y ≤ 95%
+      - `"C"`: acumulado > 95%
+  </Expandable>
+</ResponseField>
+
+**Comportamiento:**
+- El DataFrame se ordena **descendente** por `columna_valor`
+- Se calcula la participación y acumulado
+- Se asigna categoría según punto de corte
+- Si el DataFrame está vacío o la suma es cero, todas las filas son categoría "C"
+
+**Ejemplo básico:**
+
+```python
+from src.pareto import calcular_pareto
+import pandas as pd
+
+# Datos de ejemplo
+clientes = pd.DataFrame({
+    "id_cliente": ["CLI001", "CLI002", "CLI003", "CLI004", "CLI005"],
+    "importe_total": [50000, 30000, 15000, 3000, 2000]
+})
+
+# Aplicar Pareto
+clientes = calcular_pareto(
+    df=clientes,
+    columna_valor="importe_total",
+    columna_id="id_cliente"
+)
+
+print(clientes[[
+    "id_cliente", 
+    "importe_total", 
+    "participacion_pct", 
+    "acumulado_pct", 
+    "categoria_pareto"
+]])
+```
+
+**Salida:**
+
+```
+id_cliente  importe_total  participacion_pct  acumulado_pct  categoria_pareto
+CLI001      50000          0.50               0.50           A
+CLI002      30000          0.30               0.80           A
+CLI003      15000          0.15               0.95           B
+CLI004      3000           0.03               0.98           C
+CLI005      2000           0.02               1.00           C
+```
+
+---
+
+### get_concentracion_pareto()
+
+Calcula métricas agregadas de concentración y distribución.
+
+```python
+def get_concentracion_pareto(
+    df: pd.DataFrame,
+    columna_valor: str = "importe_total",
+) -> dict
+```
+
+<ParamField path="df" type="pd.DataFrame" required>
+  DataFrame **ya procesado** con `calcular_pareto()` (debe tener columna `categoria_pareto`)
+</ParamField>
+
+<ParamField path="columna_valor" type="str" default="importe_total">
+  Columna numérica para calcular participaciones
+</ParamField>
+
+<ResponseField name="return" type="dict">
+  Diccionario con métricas de concentración:
+  
+  <Expandable title="Estructura del diccionario">
+    - **`pct_entidades_A`** (float): % de entidades en categoría A (0-1)
+    - **`pct_ventas_A`** (float): % de ventas que representan las entidades A (típicamente ~0.8)
+    - **`n_entidades_A`** (int): Cantidad absoluta de entidades en categoría A
+    - **`indice_gini`** (float): Índice de Gini de concentración:
+      - 0.0 = Distribución perfectamente equitativa
+      - 1.0 = Concentración total en una entidad
+      - Típico: 0.5-0.7 en distribuciones comerciales
+  </Expandable>
+</ResponseField>
+
+**Ejemplo:**
+
+```python
+from src.pareto import calcular_pareto, get_concentracion_pareto
+
+# Primero calcular Pareto
+clientes = calcular_pareto(
+    df=ventas_por_cliente,
+    columna_valor="importe_total",
+    columna_id="id_cliente"
+)
+
+# Luego obtener métricas de concentración
+concentracion = get_concentracion_pareto(
+    df=clientes,
+    columna_valor="importe_total"
+)
+
+print(f"Clientes categoría A: {concentracion['n_entidades_A']}")
+print(f"Representan el {concentracion['pct_ventas_A']*100:.1f}% de las ventas")
+print(f"Son el {concentracion['pct_entidades_A']*100:.1f}% del total de clientes")
+print(f"Índice de Gini: {concentracion['indice_gini']:.3f}")
+```
+
+**Salida esperada:**
+
+```
+Clientes categoría A: 15
+Representan el 78.5% de las ventas
+Son el 12.3% del total de clientes
+Índice de Gini: 0.623
+```
+
+---
+
+## Función Helper
+
+### _calcular_gini()
+
+Calcula el índice de Gini (coeficiente de concentración).
+
+```python
+def _calcular_gini(valores: np.ndarray) -> float
+```
+
+<ParamField path="valores" type="np.ndarray" required>
+  Array de valores numéricos (no necesita estar ordenado)
+</ParamField>
+
+<ResponseField name="return" type="float">
+  Índice de Gini entre 0 y 1:
+  - **0.0**: Igualdad perfecta (todos los valores son iguales)
+  - **1.0**: Desigualdad máxima (un valor tiene todo, los demás nada)
+  - **0.3-0.5**: Distribución relativamente equitativa
+  - **0.5-0.7**: Concentración moderada (típico en B2B)
+  - **0.7-1.0**: Alta concentración
+</ResponseField>
+
+**Fórmula:**
+
+```
+Gini = (2 * Σ(i * valor[i]) / (n * total)) - (n + 1) / n
+```
+
+Donde valores están ordenados de menor a mayor.
+
+**Ejemplo:**
+
+```python
+import numpy as np
+from src.pareto import _calcular_gini
+
+# Distribución equitativa
+valores_equitativos = np.array([100, 100, 100, 100, 100])
+gini1 = _calcular_gini(valores_equitativos)
+print(f"Gini equitativo: {gini1:.3f}")  # ~0.0
+
+# Distribución concentrada (Pareto típico)
+valores_concentrados = np.array([1000, 500, 200, 50, 25, 15, 10])
+gini2 = _calcular_gini(valores_concentrados)
+print(f"Gini concentrado: {gini2:.3f}")  # ~0.6-0.7
+
+# Concentración extrema
+valores_extremos = np.array([10000, 1, 1, 1, 1])
+gini3 = _calcular_gini(valores_extremos)
+print(f"Gini extremo: {gini3:.3f}")  # ~0.9
+```
+
+---
+
+## Casos de Uso
+
+### Análisis de Clientes
+
+```python
+from src.kpi_engine import kpi_clientes
+from src.pareto import calcular_pareto, get_concentracion_pareto
+
+# Obtener KPIs de clientes (ya incluye Pareto)
+clientes_df = kpi_clientes(
+    df=ventas,
+    clientes_df=maestro_clientes,
+    df_anterior=ventas_anterior,
+    fecha_hasta=fecha_ref
+)
+
+# Los clientes ya tienen categoria_pareto
+clientes_A = clientes_df[clientes_df["categoria_pareto"] == "A"]
+print(f"Clientes A (top 80%): {len(clientes_A)}")
+print(f"Facturación promedio A: ${clientes_A['importe_total'].mean():,.0f}")
+
+# Concentración
+conc = get_concentracion_pareto(clientes_df, "importe_total")
+print(f"\nConcentración de cartera:")
+print(f"- {conc['n_entidades_A']} clientes A ({conc['pct_entidades_A']*100:.1f}%)")
+print(f"- Generan {conc['pct_ventas_A']*100:.1f}% de las ventas")
+print(f"- Índice de Gini: {conc['indice_gini']:.3f}")
+```
+
+---
+
+### Análisis de Productos
+
+```python
+from src.kpi_engine import kpi_productos
+
+# Obtener KPIs de productos (incluye Pareto)
+productos_df = kpi_productos(
+    df=ventas,
+    df_anterior=ventas_anterior
+)
+
+# Productos sin movimiento en categoría C
+productos_C = productos_df[productos_df["categoria_pareto"] == "C"]
+productos_sin_movimiento = productos_C[
+    productos_C["n_transacciones"] < 5
+]
+
+print(f"Productos categoría C con bajo movimiento: {len(productos_sin_movimiento)}")
+print(f"Representan ${productos_sin_movimiento['importe_total'].sum():,.0f}")
+
+# Productos estrella (categoría A)
+productos_A = productos_df[productos_df["categoria_pareto"] == "A"]
+print(f"\nProductos estrella: {len(productos_A)}")
+print(productos_A[["descripcion", "importe_total", "participacion_pct"]].head())
+```
+
+---
+
+### Segmentación para Alertas
+
+El motor de alertas usa Pareto para priorizar clientes:
+
+```python
+# ALT003: Caída en cliente categoría A
+from src.pareto import calcular_pareto
+
+grp_act = df.groupby("id_cliente")["importe_neto"].sum().reset_index()
+grp_act = grp_act.rename(columns={"importe_neto": "importe_actual"})
+grp_act = calcular_pareto(grp_act, "importe_actual", "id_cliente")
+
+# Solo alertar sobre clientes A
+cat_A = set(grp_act[grp_act["categoria_pareto"] == "A"]["id_cliente"])
+
+for cli_id in cat_A:
+    # Verificar caída >25%
+    ...
+```
+
+---
+
+## Visualización en Streamlit
+
+### Gráfico de Pareto
+
+```python
+import streamlit as st
+import plotly.express as px
+
+# DataFrame con Pareto calculado
+fig = px.bar(
+    clientes_df.head(20),
+    x="razon_social",
+    y="importe_total",
+    color="categoria_pareto",
+    color_discrete_map={"A": "#00C49F", "B": "#FFB347", "C": "#E84855"},
+    title="Top 20 Clientes por Facturación (Pareto)"
+)
+
+# Línea de acumulado
+fig.add_scatter(
+    x=clientes_df.head(20)["razon_social"],
+    y=clientes_df.head(20)["acumulado_pct"] * clientes_df["importe_total"].sum(),
+    mode="lines",
+    name="Acumulado",
+    yaxis="y2"
+)
+
+fig.update_layout(yaxis2=dict(overlaying="y", side="right"))
+st.plotly_chart(fig)
+```
+
+---
+
+### Métricas de Concentración
+
+```python
+import streamlit as st
+
+conc = get_concentracion_pareto(clientes_df)
+
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric(
+        "Clientes A",
+        f"{conc['n_entidades_A']}",
+        f"{conc['pct_entidades_A']*100:.1f}% del total"
+    )
+
+with col2:
+    st.metric(
+        "Ventas A",
+        f"{conc['pct_ventas_A']*100:.1f}%",
+        "del total"
+    )
+
+with col3:
+    st.metric(
+        "Índice de Gini",
+        f"{conc['indice_gini']:.3f}",
+        "Concentración"
+    )
+
+with col4:
+    ratio = conc['pct_ventas_A'] / conc['pct_entidades_A'] if conc['pct_entidades_A'] > 0 else 0
+    st.metric(
+        "Ratio Pareto",
+        f"{ratio:.1f}x",
+        "ventas/clientes"
+    )
+```
+
+---
+
+## Interpretación de Resultados
+
+### Categoría A (0-80% acumulado)
+
+<Card title="Clientes/Productos Críticos" icon="star">
+  - **Estrategia:** Retención y desarrollo
+  - **Riesgo:** Alta exposición si se pierden
+  - **Acción:** Atención personalizada, visitas frecuentes, gerente de cuenta
+  - **Alertas:** Prioridad alta (ALT003)
+</Card>
+
+### Categoría B (80-95% acumulado)
+
+<Card title="Potencial de Crecimiento" icon="arrow-trend-up">
+  - **Estrategia:** Desarrollo y upgrade
+  - **Oportunidad:** Pueden convertirse en A con esfuerzo comercial
+  - **Acción:** Campañas de incentivos, aumento de frecuencia
+  - **Alertas:** Oportunidades (ALT006)
+</Card>
+
+### Categoría C (95-100% acumulado)
+
+<Card title="Cola Larga" icon="chart-line">
+  - **Estrategia:** Eficiencia operativa
+  - **Riesgo:** Bajo impacto individual
+  - **Acción:** Automatización, canales digitales, menor inversión
+  - **Alertas:** Prioridad baja
+</Card>
+
+---
+
+## Configuración de Umbrales
+
+Los puntos de corte están hardcodeados en `calcular_pareto()`:
+
+```python
+def _cat(acum: float) -> str:
+    if acum <= 0.80:      # 80% acumulado
+        return "A"
+    elif acum <= 0.95:    # 95% acumulado
+        return "B"
+    return "C"
+```
+
+<Tip>
+  Para ajustar los umbrales (ej: 70/90 en lugar de 80/95), modificar esta función helper.
+  Considerar hacer los umbrales configurables por tipo de entidad.
+</Tip>
+
+---
+
+## Dependencias
+
+```python
+import pandas as pd
+import numpy as np
+```
+
+## Notas de Implementación
+
+<Note>
+  **Orden del DataFrame:** `calcular_pareto()` reordena el DataFrame descendente por `columna_valor`. 
+  El índice se resetea, por lo que el orden original se pierde.
+</Note>
+
+<Warning>
+  **Valores nulos:** Si `columna_valor` contiene `NaN`, estos se tratarán como 0 en la suma. 
+  Considerar filtrar o imputar antes de llamar a `calcular_pareto()`.
+</Warning>
+
+<Info>
+  **Performance:** El cálculo de Gini es O(n log n) por el ordenamiento. 
+  Para datasets >100K filas, considerar sampling o cálculo asíncrono.
+</Info>

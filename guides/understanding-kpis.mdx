@@ -1,0 +1,804 @@
+---
+title: Understanding KPIs
+description: Comprehensive guide to all Key Performance Indicators and their formulas
+icon: 'chart-line'
+---
+
+## KPI System Overview
+
+Visor KPI Comercial calculates **26 distinct KPIs** across 5 categories. All KPI calculations are centralized in `src/kpi_engine.py` for consistency and maintainability.
+
+<CardGroup cols={3}>
+  <Card title="Sales KPIs" icon="dollar-sign">
+    Revenue, transactions, and ticket metrics
+  </Card>
+  <Card title="Margin KPIs" icon="percent">
+    Profitability and gross margin analysis
+  </Card>
+  <Card title="Coverage KPIs" icon="users">
+    Customer portfolio health and retention
+  </Card>
+  <Card title="Salesperson KPIs" icon="user-tie">
+    Individual performance and rankings
+  </Card>
+  <Card title="Product KPIs" icon="box">
+    Product and category performance
+  </Card>
+  <Card title="Customer KPIs" icon="building">
+    Customer value and engagement metrics
+  </Card>
+</CardGroup>
+
+---
+
+## Sales KPIs
+
+### Function: `kpi_ventas_periodo()`
+
+**Source**: `kpi_engine.py:20-65`
+
+<AccordionGroup>
+  <Accordion title="Importe Total (Total Sales)" icon="dollar-sign">
+    **Formula**:
+    ```python
+importe_total = df["importe_neto"].sum()
+    ```
+    
+    **Description**: Sum of all net sales amounts for the filtered period
+    
+    **Data Type**: Float (currency)
+    
+    **Example**: $1,234,567.89
+  </Accordion>
+
+  <Accordion title="Importe vs. Anterior (YoY/MoM Change)" icon="chart-line">
+    **Formula**:
+    ```python
+importe_vs_anterior = (importe_total - importe_anterior) / importe_anterior
+    ```
+    
+    **Description**: Percentage change compared to previous equivalent period
+    
+    **Data Type**: Float (percentage, can be negative)
+    
+    **Display**: +15.3% or -8.2%
+    
+    **Note**: Returns `None` if no previous period data available
+  </Accordion>
+
+  <Accordion title="Objetivo Total (Total Target)" icon="bullseye">
+    **Formula**:
+    ```python
+objetivo_total = objetivos_df[
+    (periodo >= fecha_desde) & (periodo <= fecha_hasta)
+]["objetivo"].sum()
+    ```
+    
+    **Description**: Sum of all salesperson targets for the period
+    
+    **Source**: `Objetivos` sheet
+    
+    **Data Type**: Float (currency)
+  </Accordion>
+
+  <Accordion title="Cumplimiento (Target Achievement)" icon="percent">
+    **Formula**:
+    ```python
+cumplimiento_pct = importe_total / objetivo_total
+    ```
+    
+    **Description**: Percentage of target achieved
+    
+    **Range**: 0.0 to ∞ (typically 0.0 to 1.5)
+    
+    **Display**: 94.3%
+    
+    **Traffic Light**:
+    - 🟢 Green: ≥100% (on or above target)
+    - 🟡 Orange: 80-99% (close to target)
+    - 🔴 Red: &lt;80% (below target)
+    
+    **Code** (`kpi_engine.py:431-448`):
+    ```python
+    def _label_semaforo(cumpl: float | None) -> str:
+        if cumpl is None:
+            return "danger"
+        if cumpl >= 1.00:
+            return "success"
+        elif cumpl >= 0.80:
+            return "warning"
+        return "danger"
+    ```
+  </Accordion>
+
+  <Accordion title="Transacciones Count (Transaction Count)" icon="receipt">
+    **Formula**:
+    ```python
+transacciones_count = len(df)
+    ```
+    
+    **Description**: Total number of sales transactions
+    
+    **Data Type**: Integer
+    
+    **Use Case**: Activity level indicator, frequency analysis
+  </Accordion>
+
+  <Accordion title="Ticket Promedio (Average Ticket)" icon="ticket">
+    **Formula**:
+    ```python
+ticket_promedio = importe_total / clientes_unicos
+    ```
+    
+    **Description**: Average sales amount **per unique customer** (not per transaction)
+    
+    **Data Type**: Float (currency)
+    
+    **Interpretation**: Higher ticket = larger order sizes or higher-value customers
+    
+    <Warning>
+    This is **per customer**, not per transaction. For transaction-level average, use: `importe_total / transacciones_count`
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Clientes Únicos (Unique Customers)" icon="user-group">
+    **Formula**:
+    ```python
+clientes_unicos = df["id_cliente"].nunique()
+    ```
+    
+    **Description**: Count of distinct customers who made purchases
+    
+    **Data Type**: Integer
+    
+    **Use Case**: Customer reach, market penetration
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Margin KPIs
+
+### Function: `kpi_margen()`
+
+**Source**: `kpi_engine.py:68-92`
+
+<AccordionGroup>
+  <Accordion title="Margen Bruto Total (Total Gross Margin)" icon="sack-dollar">
+    **Formula**:
+    ```python
+margen_neto = importe_neto - (costo_catalogo / precio_catalogo * importe_neto)
+margen_bruto_total = df["margen_neto"].sum()
+    ```
+    
+    **Description**: Total profit after subtracting product costs
+    
+    **Calculation Details**:
+    1. Margin per transaction calculated in master dataframe (`data_loader.py:121`)
+    2. Cost ratio applied: `costo/precio`
+    3. Applied to net amount: `margen_neto = importe_neto × (1 - costo_ratio)`
+    
+    **Data Type**: Float (currency)
+  </Accordion>
+
+  <Accordion title="Margen % Promedio (Average Margin %)" icon="percent">
+    **Formula**:
+    ```python
+margen_pct_promedio = margen_bruto_total / importe_total
+    ```
+    
+    **Description**: Overall margin percentage across all sales
+    
+    **Range**: 0.0 to 1.0 (typically 0.15 to 0.45)
+    
+    **Display**: 32.5%
+    
+    **Interpretation**:
+    - &lt;20%: Low margin (volume business)
+    - 20-40%: Healthy margin
+    - >40%: High margin (premium products)
+  </Accordion>
+
+  <Accordion title="Margen vs. Anterior (Margin Change)" icon="arrow-trend-up">
+    **Formula**:
+    ```python
+margen_vs_anterior = (margen_total - margen_anterior) / margen_anterior
+    ```
+    
+    **Description**: Percentage change in total margin vs. previous period
+    
+    **Data Type**: Float (percentage)
+    
+    **Insights**:
+    - Positive: Improved profitability
+    - Negative: Margin pressure (discounting, cost increases, product mix shift)
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Coverage KPIs
+
+### Function: `kpi_cobertura_clientes()`
+
+**Source**: `kpi_engine.py:95-135`
+
+<AccordionGroup>
+  <Accordion title="Clientes Activos Período (Active Customers in Period)" icon="user-check">
+    **Formula**:
+    ```python
+compraron = set(df["id_cliente"].unique())
+clientes_activos_total = clientes_df[clientes_df["activo"] == True]["id_cliente"]
+n_activos_periodo = len(compraron & set(clientes_activos_total))
+    ```
+    
+    **Description**: Number of active customers who made at least one purchase in the period
+    
+    **Data Type**: Integer
+  </Accordion>
+
+  <Accordion title="Clientes Total (Total Customer Base)" icon="users">
+    **Formula**:
+    ```python
+clientes_total = len(clientes_df[clientes_df["activo"] == True])
+    ```
+    
+    **Description**: Total count of active customers in database
+    
+    **Source**: `Clientes` sheet where `activo = TRUE`
+  </Accordion>
+
+  <Accordion title="Cobertura % (Coverage Percentage)" icon="chart-pie">
+    **Formula**:
+    ```python
+cobertura_pct = clientes_activos_periodo / clientes_total
+    ```
+    
+    **Description**: Percentage of active customer base that purchased in period
+    
+    **Range**: 0.0 to 1.0
+    
+    **Display**: 67.8%
+    
+    **Benchmarks**:
+    - &lt;50%: Low engagement, opportunity to activate dormant customers
+    - 50-70%: Good coverage
+    - >70%: Excellent engagement
+  </Accordion>
+
+  <Accordion title="Clientes Perdidos (Lost Customers)" icon="user-xmark">
+    **Formula**:
+    ```python
+compraron_anterior = set(df_anterior["id_cliente"].unique())
+clientes_perdidos = len(compraron_anterior - compraron)
+    ```
+    
+    **Description**: Customers who bought in previous period but NOT in current period
+    
+    **Data Type**: Integer
+    
+    **Alert Trigger**: High churn indicator (see Alert ALT002)
+  </Accordion>
+
+  <Accordion title="Clientes Nuevos (New Customers)" icon="user-plus">
+    **Formula**:
+    ```python
+todos_anteriores = set(df_anterior["id_cliente"].unique())
+clientes_nuevos = len(compraron - todos_anteriores)
+    ```
+    
+    **Description**: Customers who made their FIRST purchase in current period
+    
+    **Data Type**: Integer
+    
+    **Use Case**: Customer acquisition rate, market expansion
+  </Accordion>
+
+  <Accordion title="Clientes Recuperados (Recovered Customers)" icon="user-check">
+    **Formula**:
+    ```python
+clientes_recuperados = len(
+    compraron & compraron_anterior - 
+    (compraron_anterior & set(clientes_activos_total))
+)
+    ```
+    
+    **Description**: Previously inactive customers who made a purchase in current period
+    
+    **Data Type**: Integer
+    
+    **Use Case**: Re-engagement success metric
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Salesperson KPIs
+
+### Function: `kpi_por_vendedor()`
+
+**Source**: `kpi_engine.py:142-211`
+
+**Returns**: DataFrame with one row per salesperson
+
+<AccordionGroup>
+  <Accordion title="Importe Total (Salesperson Sales)" icon="money-bill">
+    **Formula**:
+    ```python
+importe_total = df.groupby("id_vendedor")["importe_neto"].sum()
+    ```
+    
+    **Description**: Total sales per salesperson
+    
+    **Use Case**: Primary performance metric, ranking basis
+  </Accordion>
+
+  <Accordion title="Cumplimiento % (Individual Achievement)" icon="target">
+    **Formula**:
+    ```python
+cumplimiento_pct = importe_total / objetivo_vendedor
+    ```
+    
+    **Description**: Individual salesperson's target achievement
+    
+    **Objective Source**: `Objetivos` sheet, summed for period, grouped by `id_vendedor`
+    
+    **Display**: 102.3%
+  </Accordion>
+
+  <Accordion title="Ranking Actual (Current Rank)" icon="trophy">
+    **Formula**:
+    ```python
+kpi_vend.sort_values("importe_total", ascending=False)
+ranking_actual = kpi_vend.index + 1
+    ```
+    
+    **Description**: Salesperson rank based on sales (1 = highest)
+    
+    **Data Type**: Integer (1 to N)
+  </Accordion>
+
+  <Accordion title="Delta Ranking (Rank Change)" icon="arrow-up-arrow-down">
+    **Formula**:
+    ```python
+delta_ranking = ranking_anterior - ranking_actual
+    ```
+    
+    **Description**: Position change vs. previous period
+    
+    **Data Type**: Integer (can be negative)
+    
+    **Display**:
+    - +3 (moved up 3 positions) 🔺
+    - -2 (moved down 2 positions) 🔻
+    - 0 (no change) ➖
+  </Accordion>
+
+  <Accordion title="Transacciones (Salesperson Transactions)" icon="list">
+    **Formula**:
+    ```python
+transacciones = df.groupby("id_vendedor")["id_venta"].count()
+    ```
+    
+    **Description**: Number of transactions per salesperson
+    
+    **Use Case**: Activity level, sales velocity
+  </Accordion>
+
+  <Accordion title="Clientes Únicos (Unique Customers Served)" icon="address-book">
+    **Formula**:
+    ```python
+clientes_unicos = df.groupby("id_vendedor")["id_cliente"].nunique()
+    ```
+    
+    **Description**: Number of distinct customers served by salesperson
+    
+    **Use Case**: Portfolio breadth, coverage
+  </Accordion>
+
+  <Accordion title="Ticket Promedio (Avg Ticket per Salesperson)" icon="ticket-simple">
+    **Formula**:
+    ```python
+ticket_promedio = importe_total / clientes_unicos
+    ```
+    
+    **Description**: Average sales per customer for each salesperson
+    
+    **Use Case**: Deal size comparison, product mix indicator
+  </Accordion>
+
+  <Accordion title="Importe vs. Mes Anterior (MoM Change)" icon="chart-line">
+    **Formula**:
+    ```python
+importe_vs_mes_anterior = 
+    (importe_total - importe_anterior) / importe_anterior
+    ```
+    
+    **Description**: Month-over-month sales growth per salesperson
+    
+    **Data Type**: Float (percentage)
+  </Accordion>
+
+  <Accordion title="Color Semáforo (Traffic Light)" icon="traffic-light">
+    **Formula** (`kpi_engine.py:431-438`):
+    ```python
+    def _color_semaforo(cumpl: float | None) -> str:
+        if cumpl is None:
+            return "#E84855"  # Red
+        if cumpl >= 1.00:
+            return "#00C49F"  # Green
+        elif cumpl >= 0.80:
+            return "#FFB347"  # Orange
+        return "#E84855"     # Red
+    ```
+    
+    **Description**: Visual indicator of achievement level
+    
+    **Values**:
+    - `#00C49F` (Green): ≥100%
+    - `#FFB347` (Orange): 80-99%
+    - `#E84855` (Red): &lt;80%
+    
+    **Use Case**: Quick visual scan of team health
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Product KPIs
+
+### Function: `kpi_productos()`
+
+**Source**: `kpi_engine.py:218-256`
+
+**Returns**: DataFrame with one row per product
+
+<AccordionGroup>
+  <Accordion title="Importe Total (Product Sales)" icon="box-dollar">
+    **Formula**:
+    ```python
+importe_total = df.groupby("id_producto")["importe_neto"].sum()
+    ```
+    
+    **Description**: Total revenue per product
+  </Accordion>
+
+  <Accordion title="Unidades Vendidas (Units Sold)" icon="cubes">
+    **Formula**:
+    ```python
+unidades_vendidas = df.groupby("id_producto")["cantidad"].sum()
+    ```
+    
+    **Description**: Total quantity sold per product
+    
+    **Data Type**: Float (can have decimals for weight-based products)
+  </Accordion>
+
+  <Accordion title="N Transacciones (Transaction Count)" icon="hashtag">
+    **Formula**:
+    ```python
+n_transacciones = df.groupby("id_producto")["id_venta"].count()
+    ```
+    
+    **Description**: Number of separate orders containing this product
+    
+    **Use Case**: Product popularity, adoption rate
+  </Accordion>
+
+  <Accordion title="Categoría Pareto (ABC Category)" icon="chart-pie">
+    **Formula** (in `src/pareto.py`):
+    ```python
+    # Sort by revenue descending
+    df_sorted = df.sort_values(metric, ascending=False)
+    # Calculate cumulative percentage
+    df_sorted["pct_acumulado"] = df_sorted[metric].cumsum() / total
+    # Assign categories
+    categoria_pareto = [
+        "A" if pct <= 0.80 else
+        "B" if pct <= 0.95 else
+        "C"
+        for pct in df_sorted["pct_acumulado"]
+    ]
+    ```
+    
+    **Description**: ABC classification based on revenue contribution
+    
+    **Categories**:
+    - **A**: Top products contributing to 80% of revenue
+    - **B**: Next products contributing to next 15% (80-95%)
+    - **C**: Remaining products (last 5% of revenue)
+    
+    **Applied in**: `kpi_engine.py:240`
+  </Accordion>
+
+  <Accordion title="% Acumulado (Cumulative %)" icon="percent">
+    **Formula**:
+    ```python
+pct_acumulado = cumsum(importe_total) / sum(importe_total)
+    ```
+    
+    **Description**: Cumulative percentage of total revenue when products sorted by revenue
+    
+    **Range**: 0.0 to 1.0
+    
+    **Use Case**: Pareto chart, revenue concentration analysis
+  </Accordion>
+
+  <Accordion title="Vs. Período Anterior (Product Growth)" icon="arrow-trend-up">
+    **Formula**:
+    ```python
+vs_periodo_anterior = 
+    (importe_total - importe_anterior) / importe_anterior
+    ```
+    
+    **Description**: Period-over-period sales growth per product
+    
+    **Data Type**: Float (percentage)
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Customer KPIs
+
+### Function: `kpi_clientes()`
+
+**Source**: `kpi_engine.py:263-320`
+
+**Returns**: DataFrame with one row per customer
+
+<AccordionGroup>
+  <Accordion title="Importe Total (Customer Sales)" icon="building-circle-arrow-right">
+    **Formula**:
+    ```python
+importe_total = df.groupby("id_cliente")["importe_neto"].sum()
+    ```
+    
+    **Description**: Total revenue per customer
+  </Accordion>
+
+  <Accordion title="Frecuencia Compra (Purchase Frequency)" icon="calendar-check">
+    **Formula**:
+    ```python
+frecuencia_compra = df.groupby("id_cliente")["id_venta"].count()
+    ```
+    
+    **Description**: Number of separate purchases per customer
+    
+    **Use Case**: Customer engagement, loyalty indicator
+  </Accordion>
+
+  <Accordion title="Última Compra (Last Purchase Date)" icon="calendar">
+    **Formula**:
+    ```python
+ultima_compra = df.groupby("id_cliente")["fecha"].max()
+    ```
+    
+    **Description**: Date of most recent purchase
+    
+    **Data Type**: datetime
+  </Accordion>
+
+  <Accordion title="Primera Compra (First Purchase Date)" icon="calendar-plus">
+    **Formula**:
+    ```python
+primera_compra = df.groupby("id_cliente")["fecha"].min()
+    ```
+    
+    **Description**: Date of first purchase (in filtered period)
+    
+    **Use Case**: Customer age calculation, cohort analysis
+  </Accordion>
+
+  <Accordion title="Días Desde Última Compra (Days Since Last Purchase)" icon="hourglass">
+    **Formula**:
+    ```python
+ref_date = pd.Timestamp(fecha_hasta)
+dias_desde_ultima_compra = (ref_date - ultima_compra).dt.days
+    ```
+    
+    **Description**: Recency metric - days elapsed since last purchase
+    
+    **Data Type**: Integer
+    
+    **Use Case**: Churn risk, reactivation campaigns
+  </Accordion>
+
+  <Accordion title="Ticket Promedio (Customer Avg Ticket)" icon="ticket">
+    **Formula**:
+    ```python
+ticket_promedio = importe_total / frecuencia_compra
+    ```
+    
+    **Description**: Average purchase amount per order for each customer
+    
+    **Use Case**: Customer value segmentation
+  </Accordion>
+
+  <Accordion title="Categoría Pareto (Customer ABC)" icon="ranking-star">
+    **Formula**: Same Pareto logic as products, applied to customer revenue
+    
+    **Description**: ABC classification of customers by revenue contribution
+    
+    **Implementation**: `kpi_engine.py:298`
+    
+    **Strategic Importance**:
+    - **A Customers**: VIP, key accounts - protect and grow
+    - **B Customers**: Growth potential - upsell opportunities
+    - **C Customers**: Transactional - efficiency focus
+  </Accordion>
+
+  <Accordion title="Vs. Período Anterior (Customer Growth)" icon="chart-column">
+    **Formula**:
+    ```python
+vs_periodo_anterior = 
+    (importe_total - importe_anterior) / importe_anterior
+    ```
+    
+    **Description**: Customer wallet share growth
+    
+    **Alert Triggers**:
+    - **ALT003**: Category A customer with < -25% (critical drop)
+    - **ALT006**: Category B customer with > +30% (growth opportunity)
+  </Accordion>
+
+  <Accordion title="Flag En Riesgo (At-Risk Flag)" icon="triangle-exclamation">
+    **Formula** (`kpi_engine.py:315-318`):
+    ```python
+    flag_en_riesgo = (
+        (categoria_pareto.isin(["A", "B"])) &
+        (dias_desde_ultima_compra > 30)
+    )
+    ```
+    
+    **Description**: Boolean flag for high-value customers with low recent activity
+    
+    **Conditions**:
+    1. Customer is Category A or B (important)
+    2. AND last purchase was >30 days ago
+    
+    **Data Type**: Boolean (True/False)
+    
+    **Action**: Triggers Alert ALT002, suggests immediate outreach
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Monthly Evolution KPIs
+
+### Function: `kpi_evolucion_mensual()`
+
+**Source**: `kpi_engine.py:327-365`
+
+**Purpose**: Time series data for trend charts
+
+<AccordionGroup>
+  <Accordion title="Importe (Monthly Sales)" icon="chart-line">
+    **Formula**:
+    ```python
+mensual = df.groupby(
+    df["fecha"].dt.to_period("M")
+)["importe_neto"].sum()
+    ```
+    
+    **Description**: Total sales aggregated by month
+    
+    **Period Format**: 'YYYY-MM' (e.g., '2024-03')
+  </Accordion>
+
+  <Accordion title="N Ventas (Monthly Transactions)" icon="receipt">
+    **Formula**:
+    ```python
+n_ventas = df.groupby(
+    df["fecha"].dt.to_period("M")
+)["id_venta"].count()
+    ```
+    
+    **Description**: Transaction count per month
+  </Accordion>
+
+  <Accordion title="N Clientes (Monthly Active Customers)" icon="users">
+    **Formula**:
+    ```python
+n_clientes = df.groupby(
+    df["fecha"].dt.to_period("M")
+)["id_cliente"].nunique()
+    ```
+    
+    **Description**: Unique customers per month
+  </Accordion>
+
+  <Accordion title="Objetivo (Monthly Target)" icon="bullseye">
+    **Formula**:
+    ```python
+objetivo = objetivos_df.groupby(
+    pd.to_datetime(objetivos_df["periodo"]).dt.to_period("M")
+)["objetivo"].sum()
+    ```
+    
+    **Description**: Sum of all salesperson targets for the month
+    
+    **Joined**: Merged into monthly sales dataframe for target line on charts
+  </Accordion>
+</AccordionGroup>
+
+**Default Period**: Last 13 months (configurable via `n_meses` parameter)
+
+---
+
+## KPI Calculation Flow
+
+<Steps>
+  <Step title="Load & Filter Data">
+    ```python
+    df = get_filtered_data(fecha_desde, fecha_hasta, vendedores, zonas, canales)
+    df_anterior = get_filtered_data_periodo_anterior(...)
+    ```
+  </Step>
+
+  <Step title="Calculate KPIs">
+    ```python
+    kv = kpi_ventas_periodo(df, df_anterior, objetivos_df, ...)
+    km = kpi_margen(df, df_anterior)
+    kc = kpi_cobertura_clientes(df, clientes_df, df_anterior)
+    # ... etc
+    ```
+  </Step>
+
+  <Step title="Generate Insights">
+    ```python
+    insight = generar_insight_ejecutivo(kv, kv_df, alertas)
+    ```
+  </Step>
+
+  <Step title="Render Visualizations">
+    KPI cards, charts, and tables display calculated metrics
+  </Step>
+</Steps>
+
+---
+
+## Performance Considerations
+
+<Note>
+**Caching Strategy**
+
+All KPI functions receive filtered DataFrames as input. The filtering itself is cached via `@st.cache_data` on `get_filtered_data()`.
+
+KPI calculations are NOT cached separately - they're fast enough to recalculate on demand.
+</Note>
+
+### Optimization Tips
+
+1. **Vectorized Operations**: All KPIs use pandas vectorized operations (`.sum()`, `.groupby()`, `.nunique()`) for speed
+
+2. **Single Pass**: Multiple KPIs are calculated in one groupby operation where possible
+
+3. **Lazy Evaluation**: KPIs are only calculated for pages that need them
+
+---
+
+## Technical Reference
+
+### Return Types
+
+| Function | Returns | Use Case |
+|----------|---------|----------|
+| `kpi_ventas_periodo()` | `dict` | Summary metrics |
+| `kpi_margen()` | `dict` | Summary metrics |
+| `kpi_cobertura_clientes()` | `dict` | Summary metrics |
+| `kpi_por_vendedor()` | `DataFrame` | Ranking tables |
+| `kpi_productos()` | `DataFrame` | Product analysis |
+| `kpi_clientes()` | `DataFrame` | Customer analysis |
+| `kpi_evolucion_mensual()` | `DataFrame` | Time series charts |
+
+### Common Parameters
+
+- `df: pd.DataFrame` - Filtered sales data (current period)
+- `df_anterior: pd.DataFrame | None` - Previous period data for comparisons
+- `objetivos_df: pd.DataFrame | None` - Targets from `Objetivos` sheet
+- `clientes_df: pd.DataFrame` - Customer master from `Clientes` sheet
+- `productos_df: pd.DataFrame` - Product master from `Productos` sheet
+- `fecha_desde: date | None` - Period start date
+- `fecha_hasta: date | None` - Period end date

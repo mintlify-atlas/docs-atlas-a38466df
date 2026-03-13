@@ -1,0 +1,650 @@
+---
+title: Alert System
+description: Understanding the automated alert system and how to act on insights
+icon: 'bell'
+---
+
+## Overview
+
+Visor KPI's **Alert Engine** continuously monitors your commercial data and automatically identifies:
+
+- 🔴 **Critical Issues**: Performance problems requiring immediate action
+- 🟡 **Medium Risks**: Potential problems to monitor closely
+- 🔵 **Low Priority**: Minor issues for awareness
+- 🟢 **Opportunities**: Positive signals for growth
+
+The alert engine evaluates **7 distinct rules** against your filtered data every time you load the dashboard.
+
+<Info>
+**Real-Time Evaluation**
+
+Alerts are calculated dynamically based on your current filter selections (date range, zone, salesperson, channel). Change filters to see different alert sets.
+</Info>
+
+---
+
+## Alert Rules
+
+All 7 alert rules are defined in `src/alerts_engine.py:14-71`.
+
+### ALT001: Salesperson Low Performance
+
+<Card title="ALT001: Vendedor bajo rendimiento crítico" icon="user-xmark" color="#E84855">
+  **Severity**: 🔴 Critical (alta)
+  
+  **Trigger Condition**:
+  ```python
+  cumplimiento_pct < 0.65 in últimos 30 días
+  ```
+  
+  Salesperson has achieved **less than 65%** of their target in the last 30 days.
+  
+  **Entity Type**: `vendedor`
+  
+  **Suggested Action**: "Revisar cartera y objetivos con supervisor"
+  
+  **Explanation**: This is the most critical salesperson alert. When someone is below 65%, they're significantly off-target and need immediate intervention.
+  
+  **Detection Logic** (`alerts_engine.py:102-124`):
+  1. Filter sales to last 30 days from `fecha_hasta`
+  2. Sum sales per salesperson
+  3. Get monthly target from `Objetivos` sheet
+  4. Calculate: `cumplimiento = ventas_30d / objetivo_mes`
+  5. Alert if `cumplimiento < 0.65`
+  
+  **Next Steps**:
+  - Review salesperson's customer portfolio
+  - Check for systemic issues (territory problems, resource gaps)
+  - Reassess target if unrealistic
+  - Provide coaching or additional support
+</Card>
+
+---
+
+### ALT002: Customer Inactivity
+
+<Card title="ALT002: Cliente sin compras (riesgo de pérdida)" icon="building-circle-xmark" color="#FFB347">
+  **Severity**: 🟡 Medium (media)
+  
+  **Trigger Condition**:
+  ```python
+  cliente activo sin compras en los últimos 45 días
+  ```
+  
+  Active customer (from `Clientes` sheet with `activo = TRUE`) has **not made a purchase in 45+ days**.
+  
+  **Entity Type**: `cliente`
+  
+  **Suggested Action**: "Contacto de recuperación urgente"
+  
+  **Explanation**: Dormant customers are at high risk of churning to competitors. 45 days is the threshold for intervention.
+  
+  **Detection Logic** (`alerts_engine.py:126-145`):
+  1. Get last purchase date per customer: `ultima_compra = df.groupby("id_cliente")["fecha"].max()`
+  2. Calculate days since: `dias = (fecha_hasta - ultima_compra).days`
+  3. Alert if customer is active AND (`ultima_compra` is `None` OR `dias > 45`)
+  
+  **Next Steps**:
+  - Call or visit the customer immediately
+  - Identify reason for inactivity (competitor, service issue, changing needs)
+  - Offer promotion or incentive to reactivate
+  - Assign to salesperson if unassigned
+</Card>
+
+---
+
+### ALT003: Category A Customer Drop
+
+<Card title="ALT003: Caída de venta en cliente relevante" icon="chart-line-down" color="#E84855">
+  **Severity**: 🔴 Critical (alta)
+  
+  **Trigger Condition**:
+  ```python
+  cliente categoría A con caída >25% vs mes anterior
+  ```
+  
+  A **Pareto Category A customer** (top 20% by revenue) has experienced a **>25% revenue drop** compared to the previous period.
+  
+  **Entity Type**: `cliente`
+  
+  **Suggested Action**: "Visita de cuenta clave"
+  
+  **Explanation**: Category A customers are your most valuable accounts. A significant drop requires immediate executive attention.
+  
+  **Detection Logic** (`alerts_engine.py:147-175`):
+  1. Calculate Pareto categories for current period customers
+  2. Identify Category A customers
+  3. Compare current period revenue vs. previous period
+  4. Alert if: `(revenue_current - revenue_previous) / revenue_previous < -0.25`
+  
+  **Detail Display**:
+  ```
+  Caída: -32.4% ($450,000 → $304,200)
+  ```
+  
+  **Next Steps**:
+  - Schedule immediate visit with senior management
+  - Investigate root cause (competitor offer, service failure, budget cuts)
+  - Prepare recovery plan with incentives
+  - Escalate internally if relationship at risk
+</Card>
+
+---
+
+### ALT004: Product No Movement
+
+<Card title="ALT004: Producto sin movimiento" icon="box" color="#4A90E2">
+  **Severity**: 🔵 Low (baja)
+  
+  **Trigger Condition**:
+  ```python
+  producto activo sin ventas en 60 días
+  ```
+  
+  A product marked as active (`activo = TRUE` in `Productos` sheet) has had **no sales in 60+ days**.
+  
+  **Entity Type**: `producto`
+  
+  **Suggested Action**: "Revisar disponibilidad y push comercial"
+  
+  **Explanation**: Slow-moving inventory ties up capital and may indicate availability issues, lack of awareness, or market shift.
+  
+  **Detection Logic** (`alerts_engine.py:177-197`):
+  1. Get last sale date per product: `ultima_venta = df.groupby("id_producto")["fecha"].max()`
+  2. Filter to active products: `productos_df[activo == True]`
+  3. Alert if `ultima_venta` is `None` OR `dias_sin_venta > 60`
+  
+  **Next Steps**:
+  - Verify stock availability
+  - Check if product is featured in sales materials
+  - Consider promotion or bundle with faster-moving products
+  - Review pricing vs. competition
+  - If persistently slow, consider discontinuing
+</Card>
+
+---
+
+### ALT005: Salesperson Inactivity
+
+<Card title="ALT005: Vendedor sin actividad reciente" icon="user-clock" color="#FFB347">
+  **Severity**: 🟡 Medium (media)
+  
+  **Trigger Condition**:
+  ```python
+  vendedor sin transacciones en los últimos 7 días hábiles
+  ```
+  
+  Salesperson has recorded **no transactions in the last 7 business days**.
+  
+  **Entity Type**: `vendedor`
+  
+  **Suggested Action**: "Verificar actividad de campo"
+  
+  **Explanation**: Extended periods without activity may indicate illness, vacation, territory issues, or disengagement.
+  
+  **Detection Logic** (`alerts_engine.py:199-217`):
+  1. Calculate 7 business days ago: `_retroceder_dias_habiles(fecha_hasta, 7)`
+  2. Get last transaction date per salesperson
+  3. Alert if `ultima_actividad < cutoff_date`
+  
+  **Business Days Calculation** (`alerts_engine.py:342-350`):
+  ```python
+  def _retroceder_dias_habiles(hoy: date, n: int) -> date:
+      d = hoy
+      count = 0
+      while count < n:
+          d -= timedelta(days=1)
+          if d.weekday() < 5:  # Monday=0, Friday=4
+              count += 1
+      return d
+  ```
+  
+  **Next Steps**:
+  - Contact salesperson to verify status
+  - Check if on approved leave
+  - Review territory for systemic issues
+  - Reassign critical accounts if prolonged absence
+</Card>
+
+---
+
+### ALT006: Category B Customer Growth
+
+<Card title="ALT006: Oportunidad: cliente B en crecimiento" icon="arrow-trend-up" color="#00C49F">
+  **Severity**: 🟢 Opportunity (info)
+  
+  **Trigger Condition**:
+  ```python
+  cliente categoría B con crecimiento >30% vs mes anterior
+  ```
+  
+  A **Pareto Category B customer** (next 30% by revenue) has **grown by >30%** compared to previous period.
+  
+  **Entity Type**: `cliente`
+  
+  **Suggested Action**: "Potencial para upgrade a categoría A — aumentar frecuencia de visita"
+  
+  **Explanation**: This is a positive alert! Category B customers showing strong growth are prime candidates to become Category A key accounts.
+  
+  **Detection Logic** (`alerts_engine.py:219-247`):
+  1. Calculate Pareto categories for current period
+  2. Identify Category B customers
+  3. Compare vs. previous period
+  4. Alert if: `(revenue_current - revenue_previous) / revenue_previous > 0.30`
+  
+  **Strategic Value**:
+  - Proactive growth identification
+  - Opportunity to increase share of wallet
+  - Potential for longer-term contracts
+  - Candidate for premium service tier
+  
+  **Next Steps**:
+  - Increase visit frequency
+  - Introduce broader product range
+  - Offer volume discounts to encourage further growth
+  - Assign senior account manager if not already done
+</Card>
+
+---
+
+### ALT007: Team Near Monthly Target
+
+<Card title="ALT007: Equipo cerca del objetivo mensual" icon="bullseye" color="#00C49F">
+  **Severity**: 🟢 Opportunity (info)
+  
+  **Trigger Condition**:
+  ```python
+  cumplimiento general >85% y quedan más de 5 días hábiles
+  ```
+  
+  The team has achieved **>85% of monthly target** and there are **more than 5 business days remaining** in the month.
+  
+  **Entity Type**: `equipo`
+  
+  **Suggested Action**: "Push final para cerrar mes en verde"
+  
+  **Explanation**: This motivational alert identifies when the team is close to target with enough time to close the gap.
+  
+  **Detection Logic** (`alerts_engine.py:249-270`):
+  1. Sum all monthly targets: `objetivo_total = objetivos_df[periodo.month == current_month]["objetivo"].sum()`
+  2. Sum all current month sales: `ventas_mes = df[fecha.month == current_month]["importe_neto"].sum()`
+  3. Calculate achievement: `cumplimiento = ventas_mes / objetivo_total`
+  4. Count business days remaining: `_dias_habiles_restantes_mes(fecha_hasta)`
+  5. Alert if `cumplimiento > 0.85 AND dias_restantes > 5`
+  
+  **Business Days Remaining** (`alerts_engine.py:353-361`):
+  ```python
+  def _dias_habiles_restantes_mes(hoy: date) -> int:
+      from calendar import monthrange
+      ultimo_dia = monthrange(hoy.year, hoy.month)[1]
+      count = 0
+      for d in range(hoy.day + 1, ultimo_dia + 1):
+          if date(hoy.year, hoy.month, d).weekday() < 5:
+              count += 1
+      return count
+  ```
+  
+  **Next Steps**:
+  - Send motivational communication to team
+  - Offer short-term incentives (bonus, recognition)
+  - Focus on closing pipeline deals
+  - Accelerate decision-making on pending quotes
+</Card>
+
+---
+
+## Alert Center Page
+
+**Location**: `pages/5_alertas.py`
+
+### Summary Dashboard
+
+Top of page shows alert count by severity:
+
+<CardGroup cols={5}>
+  <Card title="Críticas" icon="circle" iconType="solid" color="#E84855">
+    Count of 🔴 `severidad = "alta"`
+  </Card>
+  <Card title="Medias" icon="circle" iconType="solid" color="#FFB347">
+    Count of 🟡 `severidad = "media"`
+  </Card>
+  <Card title="Bajas" icon="circle" iconType="solid" color="#4A90E2">
+    Count of 🔵 `severidad = "baja"`
+  </Card>
+  <Card title="Oportunidades" icon="circle" iconType="solid" color="#00C49F">
+    Count of 🟢 `severidad = "info"`
+  </Card>
+  <Card title="Total" icon="hashtag">
+    Total alert count
+  </Card>
+</CardGroup>
+
+### Filter Controls
+
+<AccordionGroup>
+  <Accordion title="Filter by Severity" icon="filter">
+    Multi-select dropdown:
+    - 🔴 Crítica
+    - 🟡 Media
+    - 🔵 Baja
+    - 🟢 Oportunidad
+    
+    Empty = show all severities
+  </Accordion>
+
+  <Accordion title="Filter by Entity Type" icon="tag">
+    Multi-select dropdown showing entity types present in current alerts:
+    - vendedor
+    - cliente
+    - producto
+    - equipo
+    
+    Dynamically populated from active alerts
+  </Accordion>
+
+  <Accordion title="Hide Reviewed" icon="eye-slash">
+    Checkbox (default: checked)
+    
+    When enabled, hides alerts marked as "Reviewed" during current session
+  </Accordion>
+</AccordionGroup>
+
+### Alert Card Display
+
+Each alert shows:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ 🔴 [ALT001] · CRÍTICA                                   │
+│ Vendedor bajo rendimiento crítico                       │
+│                                                          │
+│ Juan Pérez (vendedor) — Cumplimiento: 58.3% (umbral: 65%)│
+│ ─────────────────────────────────────────────────────── │
+│ 💡 Acción sugerida: Revisar cartera y objetivos...     │
+│                                                          │
+│ [✅ Marcar revisada]                                     │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Components**:
+- **Icon + ID**: Severity icon and alert rule ID
+- **Severity Badge**: Uppercase label (CRÍTICA, MEDIA, etc.)
+- **Alert Name**: Human-readable alert title
+- **Entity Details**: `entidad_nombre (entidad_tipo) — descripcion_detalle`
+- **Suggested Action**: Recommended next steps
+- **Action Button**: Mark as reviewed (session-only)
+
+### Mark as Reviewed
+
+Implementation (`alerts_engine.py:196-202`):
+
+```python
+if st.button("✅ Marcar revisada", key=f"_rev_{alerta_key}"):
+    st.session_state["alertas_revisadas"].add(alerta_key)
+    st.rerun()
+```
+
+**Alert Key Format**: `{id_alerta}_{entidad_id}`
+
+Example: `ALT001_VEND_0012`
+
+<Warning>
+**Session-Based Tracking**
+
+Reviewed status is stored in `st.session_state["alertas_revisadas"]` (a Python `set`). This is **not persisted** to disk.
+
+Reviewed alerts reset when:
+- You close the browser
+- Session times out
+- App restarts
+
+For persistent alert tracking, you would need to add database storage.
+</Warning>
+
+---
+
+## Alert Data Structure
+
+### DataFrame Columns
+
+The `get_alertas_activas()` function returns a DataFrame with these columns:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id_alerta` | str | Rule ID (ALT001-ALT007) |
+| `nombre` | str | Alert name/title |
+| `severidad` | str | "alta", "media", "baja", "info" |
+| `entidad_tipo` | str | "vendedor", "cliente", "producto", "equipo" |
+| `entidad_id` | str | Unique ID of affected entity |
+| `entidad_nombre` | str | Display name of entity |
+| `valor_actual` | float | Current metric value |
+| `valor_referencia` | float | Threshold/benchmark value |
+| `descripcion_detalle` | str | Human-readable detail message |
+| `fecha_deteccion` | date | Date alert was detected |
+| `accion_sugerida` | str | Recommended action |
+
+### Sorting
+
+Alerts are sorted by severity using this order:
+
+```python
+orden_sev = {"alta": 0, "media": 1, "baja": 2, "info": 3}
+```
+
+Critical alerts always appear first.
+
+---
+
+## Integration with Dashboard
+
+### Resumen Ejecutivo (Home Page)
+
+The home page shows:
+- Count of alerts by severity in the **Insight** narrative
+- First 4 alerts in the **Alertas Activas** panel
+- Link to full Alert Center if >4 alerts
+
+**Code** (`app.py:244-290`):
+
+### Alert Generation Frequency
+
+<Info>
+**Dynamic Evaluation**
+
+Alerts are recalculated every time:
+1. You change filters (date, zone, salesperson, channel)
+2. You navigate to a page that displays alerts
+3. The data cache refreshes (1-hour TTL)
+
+No alerts are stored - they're computed on-demand from current data.
+</Info>
+
+---
+
+## Customizing Alerts
+
+### Modifying Thresholds
+
+To adjust alert sensitivity, edit values in `alerts_engine.py:14-71`:
+
+**Example: Change ALT001 threshold from 65% to 70%**:
+
+```python
+{
+    "id":              "ALT001",
+    "nombre":          "Vendedor bajo rendimiento crítico",
+    "condicion":       "cumplimiento_pct < 0.70 en los últimos 30 días",  # Changed
+    "severidad":       "alta",
+    ...
+}
+```
+
+Then update the detection logic:
+
+```python
+if cumpl < 0.70:  # Changed from 0.65
+    alertas.append(...)
+```
+
+### Adding New Alert Rules
+
+<Steps>
+  <Step title="Define Rule">
+    Add to `ALERT_RULES` list:
+    ```python
+    {
+        "id":              "ALT008",
+        "nombre":          "Your Alert Name",
+        "condicion":       "Description of trigger condition",
+        "severidad":       "alta"|"media"|"baja"|"info",
+        "entidad_tipo":    "vendedor"|"cliente"|"producto"|"equipo",
+        "accion_sugerida": "What to do about it",
+    }
+    ```
+  </Step>
+
+  <Step title="Implement Detection Logic">
+    Add detection code in `get_alertas_activas()` function:
+    ```python
+    # ── ALT008: Your Custom Alert ──────────────────────────
+    if condition_is_met:
+        alertas.append(_crear_alerta(
+            regla       = ALERT_RULES[7],  # Index of new rule
+            entidad_id  = entity_id,
+            entidad_nom = entity_name,
+            val_actual  = current_value,
+            val_ref     = threshold_value,
+            detalle     = f"Detail message: {value}",
+            fecha       = fecha_hasta,
+        ))
+    ```
+  </Step>
+
+  <Step title="Test">
+    1. Restart Streamlit app
+    2. Navigate to Alert Center
+    3. Verify new alert appears when conditions are met
+    4. Test with different filter combinations
+  </Step>
+</Steps>
+
+### Changing Severity Levels
+
+You can reclassify any alert's severity by changing its `"severidad"` value:
+
+- `"alta"` (🔴) - Critical, immediate action required
+- `"media"` (🟡) - Medium priority, monitor closely
+- `"baja"` (🔵) - Low priority, for awareness
+- `"info"` (🟢) - Positive opportunity, non-urgent
+
+---
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Review Daily" icon="calendar-check">
+    Check the Alert Center daily at start of day to prioritize actions. Focus on 🔴 critical alerts first.
+  </Card>
+
+  <Card title="Act on Insights" icon="list-check">
+    Alerts are only valuable if acted upon. Assign owners and track follow-up for each critical alert.
+  </Card>
+
+  <Card title="Tune Thresholds" icon="sliders">
+    After initial deployment, adjust thresholds based on your business reality. Too many false positives = alert fatigue.
+  </Card>
+
+  <Card title="Combine with Reports" icon="file-chart-column">
+    Use alerts to identify issues, then drill into detailed reports (Vendedores, Clientes, Productos pages) for root cause analysis.
+  </Card>
+</CardGroup>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="No Alerts Showing" icon="bell-slash">
+    **Possible Causes**:
+    1. No data in selected period/filters
+    2. All metrics are healthy (good news!)
+    3. Thresholds are too strict
+    
+    **Diagnosis**:
+    - Check "Resumen Ejecutivo" to verify data is loading
+    - Clear all filters to see if alerts appear
+    - Review alert thresholds in `alerts_engine.py`
+  </Accordion>
+
+  <Accordion title="Too Many Alerts" icon="bell-exclamation">
+    **Possible Causes**:
+    1. Thresholds too sensitive
+    2. Systemic performance issues
+    3. Data quality problems
+    
+    **Solutions**:
+    - Adjust thresholds to focus on most critical issues
+    - Use severity filters to prioritize
+    - Investigate root causes (may indicate broader business problems)
+  </Accordion>
+
+  <Accordion title="Alert Doesn't Make Sense" icon="question">
+    **Possible Causes**:
+    1. Bug in detection logic
+    2. Data quality issue (wrong joins, missing data)
+    3. Misunderstanding of metric definition
+    
+    **Diagnosis**:
+    - Check `valor_actual` vs `valor_referencia` in alert detail
+    - Verify entity exists in raw data
+    - Review KPI calculation in `kpi_engine.py`
+    - Check for NULL values or data type mismatches
+  </Accordion>
+
+  <Accordion title="Reviewed Status Not Saving" icon="floppy-disk-circle-xmark">
+    **Expected Behavior**: Reviewed status is **session-based** and does not persist across browser sessions or app restarts.
+    
+    If you need persistent tracking:
+    1. Add a database table for alert tracking
+    2. Store reviewed status with user ID and timestamp
+    3. Query on load to populate `st.session_state["alertas_revisadas"]`
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Technical Reference
+
+### Main Function Signature
+
+```python
+def get_alertas_activas(
+    df: pd.DataFrame,
+    df_anterior: pd.DataFrame | None,
+    clientes_df: pd.DataFrame,
+    productos_df: pd.DataFrame,
+    objetivos_df: pd.DataFrame | None = None,
+    fecha_hasta: date | None = None,
+) -> pd.DataFrame:
+```
+
+**Parameters**:
+- `df` - Current period filtered sales data
+- `df_anterior` - Previous period data for comparisons
+- `clientes_df` - Customer master data
+- `productos_df` - Product master data
+- `objetivos_df` - Target/objective data
+- `fecha_hasta` - Reference date (usually filter end date)
+
+**Returns**: DataFrame with columns listed in [Alert Data Structure](#alert-data-structure)
+
+### Helper Functions
+
+- `_crear_alerta()` - Constructs alert dict from rule + data
+- `_get_nombre_vendedor()` - Gets salesperson display name
+- `_get_nombre_cliente()` - Gets customer display name  
+- `_get_objetivo_mes()` - Gets monthly target by salesperson
+- `_retroceder_dias_habiles()` - Calculates N business days ago
+- `_dias_habiles_restantes_mes()` - Counts business days left in month
+
+**Source**: `alerts_engine.py:292-361`

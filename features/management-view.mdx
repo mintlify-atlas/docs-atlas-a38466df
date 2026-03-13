@@ -1,0 +1,304 @@
+---
+title: 'Management View'
+description: 'Complete team performance analysis and sales force management dashboard'
+icon: 'users-gear'
+---
+
+## Overview
+
+The **Management View** (Vista Gerencial) provides commercial directors and sales managers with comprehensive tools to monitor, analyze, and optimize their entire sales team's performance. This view consolidates individual seller metrics, territorial analysis, and trend identification in a single management dashboard.
+
+<Info>
+  **Who uses this view**: Commercial managers, regional directors, and team leaders responsible for sales team performance and territory management.
+</Info>
+
+## Key Performance Indicators
+
+### Management KPI Overview
+
+Four strategic metrics are displayed at the dashboard top:
+
+<CardGroup cols={2}>
+  <Card title="Total Team Sales" icon="dollar-sign">
+    Consolidated revenue across all sellers:
+    - Total sales for selected period
+    - % change vs previous period
+    - Progress toward team target
+    - Performance indicator (green/orange/red)
+  </Card>
+  
+  <Card title="Average Ticket" icon="receipt">
+    Average sale value per transaction:
+    - Helps identify pricing strategy effectiveness
+    - Useful for upselling/cross-selling analysis
+    - Indicates deal quality vs volume
+  </Card>
+  
+  <Card title="Sellers in Green" icon="circle-check">
+    Number of team members exceeding quota:
+    - Count of sellers at 100%+ attainment
+    - Visual indicator of team health
+    - Target: Maximize this number
+  </Card>
+  
+  <Card title="Total Transactions" icon="clipboard-list">
+    Volume of sales operations:
+    - Total number of transactions processed
+    - Activity level indicator
+    - Useful for resource planning
+  </Card>
+</CardGroup>
+
+## Team Performance Analysis
+
+### Monthly Evolution Chart
+
+The **Team Monthly Evolution** chart displays:
+
+- Historical sales trend (up to 13 months)
+- Actual performance vs monthly targets
+- Cumulative view of team progress
+- Seasonal pattern identification
+
+**Use cases**:
+- Identify growth/decline trends
+- Spot seasonal patterns
+- Forecast future performance
+- Set realistic targets
+
+### Seller Performance Comparison
+
+The **Performance by Seller** bar chart shows:
+
+- Each seller's quota attainment percentage
+- Color-coded bars:
+  - 🟢 **Green** (100%+): Meeting or exceeding target
+  - 🟡 **Orange** (80-99%): Close to target
+  - 🔴 **Red** (&lt;80%): Below expectations
+- Horizontal reference line at 100%
+- Sortable by performance
+
+<Note>
+  This chart makes it instantly clear which sellers need coaching or support versus those who could mentor others.
+</Note>
+
+## Complete Seller Ranking
+
+The **full seller ranking table** provides detailed performance data:
+
+### Columns Displayed
+
+| Column | Description |
+|--------|-------------|
+| **Rank** | Current position (1 = highest sales) |
+| **Seller Name** | Full name and zone assignment |
+| **Total Sales** | Revenue generated in period |
+| **Quota Attainment** | % of assigned target achieved |
+| **Transactions** | Number of sales completed |
+| **Unique Clients** | Distinct customers served |
+| **Avg Ticket** | Revenue per unique client |
+| **vs Previous Period** | % change from prior period |
+| **Rank Movement** | ↑/↓ position change |
+| **Profile** | Seller classification (star/stable/development/problematic) |
+
+### Traffic Light System
+
+Each row is highlighted with a performance indicator:
+
+- 🟢 **Green**: 100%+ attainment (target exceeded)
+- 🟡 **Orange**: 80-99% attainment (approaching target)
+- 🔴 **Red**: &lt;80% attainment (needs attention)
+
+<Tip>
+  Click any column header to sort the table. Use this to quickly identify best performers or those needing support.
+</Tip>
+
+## Activity Heatmap
+
+The **Team Activity Heatmap** visualizes sales patterns across:
+
+- **Rows**: Days of the week (Monday-Friday)
+- **Columns**: Sellers in your team
+- **Color intensity**: Sales volume (darker = more sales)
+
+**Insights you can gain**:
+- Which days are most productive for your team
+- Individual seller activity patterns
+- Identify underutilized selling days
+- Spot potential scheduling issues
+
+<CardGroup cols={2}>
+  <Card title="High Activity" icon="fire" color="#00C49F">
+    Dark green cells indicate peak performance days. Use these patterns to schedule important client visits.
+  </Card>
+  
+  <Card title="Low Activity" icon="droplet" color="#6C9EE5">
+    Light/white cells show slow days. Consider training, meetings, or focus on reactivation campaigns.
+  </Card>
+</CardGroup>
+
+## Territorial Analysis
+
+The **Analysis by Zone** table breaks down performance geographically:
+
+| Zone | Total Sales | % Participation |
+|------|-------------|------------------|
+| North | $850,000 | 34.2% |
+| South | $720,000 | 28.9% |
+| East | $520,000 | 20.9% |
+| West | $395,000 | 15.9% |
+
+**Use this data to**:
+- Identify strong vs weak territories
+- Allocate resources based on potential
+- Detect geographic trends
+- Plan territory realignments
+
+<Note>
+  Territorial data is automatically calculated when the `zona_vendedor` field is present in your dataset.
+</Note>
+
+## Management Workflows
+
+### Weekly Team Review
+
+**Every Monday morning**:
+
+1. **Check Team KPIs**
+   - Are we on track for monthly target?
+   - What's the average ticket trend?
+
+2. **Review Seller Rankings**
+   - Who moved up/down in rankings?
+   - Who needs coaching this week?
+
+3. **Analyze Activity Patterns**
+   - Are there concerning gaps in the heatmap?
+   - Which days need activity boosts?
+
+4. **Territory Performance**
+   - Which zones are underperforming?
+   - Where should we focus resources?
+
+### Monthly Performance Reviews
+
+**End-of-month routine**:
+
+1. Compare actual vs target for each seller
+2. Identify top performers for recognition
+3. Schedule coaching sessions for underperformers
+4. Analyze trend over last 3-6 months
+5. Adjust next month's targets if needed
+
+### Coaching Trigger Points
+
+Automatic coaching triggers based on KPIs:
+
+<Warning>
+  **Critical (immediate action)**:
+  - Seller below 65% attainment
+  - Zero activity for 7+ business days
+  - Ranking drop of 3+ positions
+</Warning>
+
+<Info>
+  **Coaching opportunity (schedule session)**:
+  - 2 consecutive months in orange zone
+  - Declining trend over 3 months
+  - High transaction count but low avg ticket
+</Info>
+
+## Filters and Segmentation
+
+Use sidebar filters to segment your analysis:
+
+- **Date Range**: Compare different periods
+- **Specific Sellers**: Focus on individual or group
+- **Zones**: Territorial deep dive
+- **Channels**: Performance by sales channel
+
+**Pro tip**: Use filters to create cohort comparisons:
+- New sellers vs experienced team
+- North zone vs South zone
+- Traditional vs e-commerce channels
+
+## KPI Calculations
+
+All metrics follow these calculation rules:
+
+### Team Sales Total
+```
+Sum of importe_neto for all transactions
+where id_vendedor in selected_sellers
+and fecha between fecha_desde and fecha_hasta
+```
+
+### Quota Attainment
+```
+(Actual Sales / Assigned Target) × 100
+where target = sum of monthly objectives for seller
+```
+
+### Average Ticket
+```
+Total Sales / Unique Clients Served
+```
+
+### Rank Calculation
+```
+DESC order by importe_total
+Current rank - Previous rank = Delta
+```
+
+### Traffic Light Logic
+```
+if attainment >= 100%: Green
+else if attainment >= 80%: Orange
+else: Red
+```
+
+## Seller Profiles
+
+Visor KPI classifies sellers into four profiles:
+
+<CardGroup cols={2}>
+  <Card title="⭐ Star" icon="star" color="#00C49F">
+    Consistently exceeds quota, high client satisfaction, top ranking
+  </Card>
+  
+  <Card title="📊 Stable" icon="chart-line" color="#6C9EE5">
+    Reliably meets targets, steady performance, core team member
+  </Card>
+  
+  <Card title="🌱 Development" icon="seedling" color="#FFB347">
+    Showing potential, needs coaching, improving trend
+  </Card>
+  
+  <Card title="⚠️ Problematic" icon="triangle-exclamation" color="#E84855">
+    Consistently underperforms, needs intervention or PIP
+  </Card>
+</CardGroup>
+
+These profiles are maintained in the seller master data and help contextualize performance.
+
+## Export and Reporting
+
+<Tip>
+  All tables in this view can be exported for further analysis or presentation. Use the export button in the top-right of each component.
+</Tip>
+
+## Related Views
+
+<CardGroup cols={3}>
+  <Card title="Sales Team View" icon="user" href="/features/sales-team-view">
+    Individual seller performance details
+  </Card>
+  
+  <Card title="Executive Summary" icon="chart-line" href="/features/executive-summary">
+    High-level business overview
+  </Card>
+  
+  <Card title="Alerts Center" icon="bell" href="/features/alerts-center">
+    Team performance alerts
+  </Card>
+</CardGroup>
